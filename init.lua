@@ -1,6 +1,3 @@
+user_config = user_config or {}
 user_config = require('lib')
-user_config:set_opts()
-user_config:set_keymaps()
-user_config:set_autocmds()
-user_config:set_filetypes()
-user_config:load_plugins()
+user_config:setup()

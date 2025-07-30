@@ -1,7 +1,9 @@
 require('lib.utils')
+
 local list = require('lib.list')
+local dict = require('lib.dict')
+local types = require('lib.type')
 local nvim = {}
-user_config.nvim = nvim
 
 function nvim.normal()
   vim.cmd.normal({ vim.fn.mode(), bang = true })
@@ -55,6 +57,57 @@ function nvim.ls(dirname, fullname)
     end
   end
   return res
+end
+
+function nvim.loadstring(s)
+  local ok, msg = loadstring(s)
+  if ok then
+    return ok()
+  else
+    return false, msg
+  end
+end
+
+function nvim.loadfile(f)
+  local fh = io.open(f, 'r')
+  if not fh then return end
+  local lines = fh:read('*a')
+  return nvim.loadstring(lines)
+end
+
+function nvim.require2path(require_string, dir)
+  types.validate.require_string(require_string, 'string')
+  types.validate.opt_runtimepath(dir, 'string')
+
+  dir = ifnil(dir, vim.fn.stdpath('config')) .. '/lua'
+  require_string = vim.split(require_string, '[.]')
+  local path = list.join(list.cat(dir, require_string), '/')
+  pp(path)
+
+  return path
+end
+
+function nvim.path2require(path)
+  types.validate.path(path, 'string')
+
+  local config_path = vim.fn.stdpath('config')
+  if not path:match(config_path) then
+    return false
+  elseif not path:match('.lua$') then
+    return false
+  else
+    path = path:gsub(config_path .. '/lua/', '')
+    path = vim.split(path, '/')
+    local len = #path
+    path[len] = path[len]:gsub('[.]lua', '')
+    path = list.join(path, '.')
+  end
+
+  return path
+end
+
+function nvim.require_path(path)
+  return require(nvim.path2require(path))
 end
 
 return nvim

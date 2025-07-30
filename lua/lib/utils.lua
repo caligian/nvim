@@ -64,7 +64,9 @@ function ifnonnil(obj, if_nonnil, if_nil)
 end
 
 function ifnil(obj, if_nil, if_nonnil)
-  if if_nonnil == nil then if_nonnil = obj end
+  if if_nonnil == nil then
+    if_nonnil = obj
+  end
   if obj == nil then
     return if_nil
   else
@@ -87,6 +89,10 @@ end
 
 function identity(...)
   return ...
+end
+
+function pp(...)
+  printf('%s', ...)
 end
 
 inspect = vim.inspect

@@ -1,5 +1,6 @@
 require 'lib.utils'
 local list = require('lib.list')
+local dict = require('lib.dict')
 local types = require('lib.type')
 local buffer = {}
 user_config.buffer = buffer
@@ -7,9 +8,8 @@ user_config.buffer = buffer
 buffer.call = vim.api.nvim_buf_call
 buffer.del_keymap = vim.api.nvim_buf_del_keymap
 buffer.del_var = vim.api.nvim_buf_del_var
-buffer.get_var = vim.api.nvim_buf_gel_var
-buffer.set_var = vim.api.nvim_buf_sel_var
-buffer.delete = vim.api.nvim_buf_delete
+buffer.get_var = vim.api.nvim_buf_get_var
+buffer.set_var = vim.api.nvim_buf_set_var
 buffer.get_lines = vim.api.nvim_buf_get_lines
 buffer.get_text = vim.api.nvim_buf_get_text
 buffer.get_name = vim.api.nvim_buf_get_name
@@ -32,6 +32,13 @@ buffer.get_current = vim.api.nvim_get_current_buf
 buffer.current = buffer.get_current
 buffer.length = buffer.line_count
 
+function buffer.delete(bufnr, force)
+  force = ifnil(force, true, false)
+  vim.api.nvim_buf_delete(bufnr, {force = true})
+end
+
+buffer.del = buffer.delete
+
 function buffer.exists(bufnr)
   return vim.fn.bufexists(bufnr) == 1
 end
@@ -49,6 +56,7 @@ function buffer.set_opt(bufnr, name, value)
 end
 
 function buffer.get(name, create)
+  name = name or vim.fn.tempname()
   return vim.fn.bufnr(name, create)
 end
 
@@ -73,6 +81,12 @@ end
 function buffer.get_linenum(bufnr)
   return buffer.call(bufnr, function ()
     return vim.fn.getpos(".")[2] - 1
+  end)
+end
+
+function buffer.current_line(bufnr)
+  return buffer.call(bufnr, function ()
+    return vim.fn.getline('.')
   end)
 end
 
@@ -159,6 +173,20 @@ function buffer.hide(bufnr, force)
   return true
 end
 
+function buffer.split_current(direction, resize)
+  if direction == 'right' or direction == 'vsplit' or direction == 'v' then
+    vim.cmd 'vsplit | wincmd l'
+    if resize then
+      vim.cmd(sprintf('vert resize %s', tostring(resize)))
+    end
+  else
+    vim.cmd 'split | wincmd j'
+    if resize then
+      vim.cmd(sprintf('resize %s', tostring(resize)))
+    end
+  end
+end
+
 function buffer.split(bufnr, direction, resize)
   buffer.call(bufnr, function ()
     if direction == 'right' or direction == 'vsplit' or direction == 'v' then
@@ -175,9 +203,12 @@ function buffer.split(bufnr, direction, resize)
   end)
 end
 
-function buffer.split_with(src, dest, direction, resize)
-  buffer.split(src, direction, resize)
-  vim.cmd(sprintf(':buffer %s', dest))
+function buffer.split_current_right(resize)
+  return buffer.split_current('right', resize)
+end
+
+function buffer.split_current_below(resize)
+  return buffer.split_current('s', resize)
 end
 
 function buffer.split_below(bufnr, resize)
@@ -217,7 +248,8 @@ function buffer.create_temp(name, opts)
 
   if split then
     vim.keymap.set('n', 'q', '<cmd>bwipeout! %<CR>', {buffer = bufnr})
-    buffer.split_with(buffer.current(), bufnr, split, resize)
+    buffer.split(buffer.current(), split, resize)
+    buffer.set_current(bufnr)
     buffer.call(bufnr, function () vim.cmd 'normal! G' end)
   end
 
@@ -254,6 +286,98 @@ function buffer.create_temp(name, opts)
       end))
     end
   end
+
+  return bufnr
 end
+
+function buffer.open_term(cmd, cwd)
+  local temp_bufnr = buffer.create(nil, false)
+  local job_id, termbufnr
+  local chansend = vim.api.nvim_chan_send
+
+  buffer.call(temp_bufnr, function ()
+    vim.cmd('term')
+    termbufnr = buffer.current()
+    job_id = vim.b.terminal_job_id
+    user_config.terminals[job_id] = termbufnr
+    cmd = ifelse(
+      cwd,
+      sprintf('cd "%s" && %s', cwd, cmd),
+      cmd
+    )
+
+    printf(
+      'Started terminal with command: %s',
+      cmd,
+      cwd:gsub(os.getenv('HOME'), '~')
+    )
+
+    chansend(job_id, cmd .. "\n")
+
+    vim.api.nvim_create_autocmd('TermClose', {
+      buffer = termbufnr,
+      desc = 'Delete terminal buffer',
+      callback = function (args) buffer.del(args.buf) end
+    })
+
+    vim.keymap.set(
+      'n', 'q', ':hide<CR>', {buffer = termbufnr}
+    )
+
+    buffer.set_opt(termbufnr, 'buflisted', false)
+  end)
+
+  buffer.del(temp_bufnr)
+
+  return termbufnr, job_id
+end
+
+function buffer:dirname(bufnr)
+  return vim.fs.dirname(buffer.name(bufnr))
+end
+
+function buffer.filetype(bufnr)
+  return buffer.get_opt(bufnr, 'filetype')
+end
+
+function buffer.root_dir(bufnr, pat, depth)
+  bufnr = bufnr or vim.fn.bufnr()
+  local bufname = vim.fn.bufname(bufnr)
+  local ws = vim.fs.find(pat, {upward = true, limit = depth or 4})
+
+  if #ws == 0 then
+    return vim.fs.dirname(bufname)
+  else
+    ws = vim.fs.dirname(ws[1])
+    user_config.workspaces[bufnr] = ws
+    user_config.workspaces[bufname] = ws
+    dict.set(user_config.workspaces, {ws, bufnr}, true)
+    dict.set(user_config.workspaces, {ws, bufname}, true)
+
+    return ws
+  end
+end
+
+function buffer.workspace(bufnr, opts)
+  opts = opts or {}
+  local pat = opts.pattern or opts.pat
+  local depth = opts.depth or opts.check_depth
+  local callback = opts.callback
+  bufnr = bufnr or vim.fn.bufnr()
+  local exists = user_config.workspaces[bufnr]
+
+  if exists and callback then
+    return callback(exists)
+  elseif exists then
+    return exists
+  elseif pat then
+    if callback then
+      return callback(buffer.root_dir(bufnr, pat, depth))
+    else
+      return buffer.root_dir(bufnr, pat, depth)
+    end
+  end
+end
+
 
 return buffer

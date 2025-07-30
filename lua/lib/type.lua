@@ -2,7 +2,6 @@ require 'lib.utils'
 
 local types = {_base = {}}
 local list = require('lib.list')
-user_config.types = types
 
 function types.userdata(x)
   if x == nil then
@@ -528,7 +527,6 @@ local function validate_table(x, spec, prefix)
 end
 
 types.validate = {}
-user_config.validate = types.validate
 local validate = types.validate
 setmetatable(types.validate, types.validate)
 

@@ -1,5 +1,4 @@
 local dict = {}
-user_config.dict = dict
 dict.empty = vim.tbl_isempty
 dict.size = vim.tbl_count
 dict.values = vim.tbl_values
@@ -82,7 +81,7 @@ end
 function dict.filter(x, f, map)
   local res = {}
   for key, value in pairs(x) do
-    if f(value) then
+    if f(key, value) then
       res[key] = map and map(value) or value
     end
   end
@@ -190,6 +189,20 @@ end
 function dict.set_unless(x, ks, value)
   if not dict.has(x, ks) then
     return dict.set(x, ks, value, true)
+  end
+end
+
+function dict.from_keys(ks, default_fn)
+  local res = {}
+  for i=1, #ks do
+    res[ks[i]] = default_fn()
+  end
+  return res
+end
+
+function dict.each(x, callback)
+  for key, value in pairs(callback) do
+    callback(key, value)
   end
 end
 
