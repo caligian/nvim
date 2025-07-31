@@ -1,6 +1,14 @@
 return {
   name = 'lua',
   repl = { command = 'luajit' },
+  autocmds = {
+    disable_diagnostics = function (args) 
+        vim.diagnostic.config {
+            virtual_text = false,
+            signs = true
+        }
+    end
+  },
   buffer = {
     opts = {
       shiftwidth = 2,
@@ -28,12 +36,18 @@ return {
             'partial', 'rpartial',
             'thread', 'identity',
           },
+          disable = {
+            'missing-fields',
+            'lowercase-global',
+            'unused-vararg',
+            'need-check-nil',
+            'assign-type-match',
+            'param-type-mismatch',
+            'inject-field',
+          }
         },
         workspace = {
-          library = {
-            vim.api.nvim_get_runtime_file("", true),
-
-          },
+          library = vim.api.nvim_get_runtime_file("", true),
         },
         telemetry = {
           enable = false,

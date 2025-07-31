@@ -3,6 +3,7 @@ require('lib.utils')
 local list = require('lib.list')
 local dict = require('lib.dict')
 local types = require('lib.type')
+local validate = require('lib.validate')
 local nvim = {}
 
 function nvim.normal()
@@ -76,8 +77,8 @@ function nvim.loadfile(f)
 end
 
 function nvim.require2path(require_string, dir)
-  types.validate.require_string(require_string, 'string')
-  types.validate.opt_runtimepath(dir, 'string')
+  validate.require_string(require_string, 'string')
+  validate.opt_runtimepath(dir, 'string')
 
   dir = ifnil(dir, vim.fn.stdpath('config')) .. '/lua'
   require_string = vim.split(require_string, '[.]')
@@ -88,7 +89,7 @@ function nvim.require2path(require_string, dir)
 end
 
 function nvim.path2require(path)
-  types.validate.path(path, 'string')
+  validate.path(path, 'string')
 
   local config_path = vim.fn.stdpath('config')
   if not path:match(config_path) then

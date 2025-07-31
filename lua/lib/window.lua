@@ -1,5 +1,4 @@
 local win = {}
-user_config.win = win
 
 win.id = vim.fn.win_getid
 win.nr2id = vim.fn.win_getid

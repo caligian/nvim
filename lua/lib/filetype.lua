@@ -2,9 +2,10 @@ local types = require('lib.type')
 local dict = require('lib.dict')
 local augroup = require('lib.augroup')
 local buffer = require('lib.buffer')
-local validate = types.validate
+local validate = require('lib.validate')
 local str = require('lib.string')
 local nvim = require('lib.nvim')
+local class = require('lib.class')
 
 --- Valid options
 -- {
@@ -31,7 +32,7 @@ local nvim = require('lib.nvim')
 --   }
 -- }
 
-local filetype = types.new('filetype')
+local filetype = class('filetype')
 
 local function update_lsp_config(opts)
   local server
@@ -49,6 +50,7 @@ local function update_lsp_config(opts)
   end
 
   dict.set_unless(opts, {'repl', 'root'}, {})
+
   if not opts.repl.root.pattern then
     if config.root_markers then
       opts.repl.root.pattern = config.root_markers
@@ -91,13 +93,12 @@ function filetype:initialize(opts)
   dict.merge(self, opts)
 
   if self.lsp then
-    types.validate.server(opts.lsp[1], 'string')
+    validate.server(opts.lsp[1], 'string')
   end
 
   self.require_path = 'config.filetypes.' .. self.name
-  self.augroup = augroup:new('user_defaults.' .. str.title(self.name))
+  self.augroup = augroup('user_config.' .. self.name)
   self.loaded = false
-
   user_config.filetypes[self.name] = self
 
   self:setup()
@@ -123,10 +124,16 @@ function filetype:require()
 end
 
 function filetype:set_autocmds()
-  if self.autocmds then
-    self.augroup:add_autocmds(self.autocmds)
-    return true
+  if not self.autocmds then
+    return
   end
+
+  for name, callback in pairs(self.autocmds) do
+    local opts = {name = name, desc = name}
+    self.augroup:add_autocmd('FileType', self.name, callback, opts)
+  end
+
+  return true
 end
 
 function filetype:set_keymaps()
@@ -137,47 +144,44 @@ function filetype:set_keymaps()
 end
 
 function filetype:set_buf_vars()
-  if self.buffer and self.buffer.vars then
-    self.augroup:add_autocmd('buffer_variables', 'FileType', function()
-      local curbuf = buffer.current()
-      for key, value in pairs(self.buffer.vars) do
-        buffer.set_var(curbuf, key, value)
-      end
-    end, {pattern = self.name})
-  end
+    self.augroup:add_autocmd('FileType', self.name, function()
+        if self.buffer and self.buffer.vars then
+            local curbuf = buffer.current()
+            for key, value in pairs(self.buffer.vars) do
+                buffer.set_var(curbuf, key, value)
+            end
+        end
+    end, {name = 'buffer.variables'})
 end
 
 function filetype:set_buf_opts()
-  if self.buffer and self.buffer.opts then
-    self.augroup:add_autocmd('buffer_options', 'FileType', function()
-      local curbuf = buffer.current()
-      for key, value in pairs(self.buffer.opts) do
-        buffer.set_opt(curbuf, key, value)
-      end
-    end, {pattern = self.name})
-  end
+    self.augroup:add_autocmd('FileType', self.name, function()
+        if self.buffer and self.buffer.opts then
+            local curbuf = buffer.current()
+            for key, value in pairs(self.buffer.opts) do
+                buffer.set_opt(curbuf, key, value)
+            end
+        end
+    end, {name = 'buffer.options'})
 end
 
-function filetype:add_autocmd(name, callback, opts)
+function filetype:add_autocmd(callback, opts)
   opts = opts or {}
-  types.validate.opts(opts, 'table')
-  self.augroup:add_autocmd(name, 'FileType', callback, {
-    pattern = self.name,
-    desc = opts.desc,
-    once = opts.once,
-    nested = opts.nested
-  })
+  validate.opts(opts, 'table')
+  opts = vim.deepcopy(opts)
+  opts.pattern = self.name
+  self.augroup:add_autocmd('FileType', self.name, callback, opts)
 end
 
 function filetype:add_keymap(name, mode, lhs, rhs, opts)
   opts = opts or {}
-  types.validate.opts(opts, 'table')
+  validate.opts(opts, 'table')
   opts = vim.deepcopy(opts)
-  name = 'keymap.' .. name
-  self:add_autocmd(name, function ()
+  opts.name = 'keymap.' .. name
+  self:add_autocmd(function ()
     opts.buffer = buffer.current()
     vim.keymap.set(mode, lhs, rhs, opts)
-  end)
+  end, opts)
 end
 
 function filetype:add_keymaps(specs)
@@ -198,10 +202,10 @@ function filetype:query(...)
 end
 
 function filetype:setup()
-  self:set_autocmds()
-  self:set_keymaps()
   self:set_buf_vars()
   self:set_buf_opts()
+  self:set_autocmds()
+  self:set_keymaps()
   self.loaded = true
   return self
 end

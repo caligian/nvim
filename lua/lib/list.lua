@@ -1,5 +1,4 @@
 local list = {}
-user_config.list = list
 list.concat = table.concat
 list.collapse = table.concat
 list.join = table.concat

@@ -1,5 +1,4 @@
 local dict = require('lib.dict')
-local types = require('lib.type')
 
 return {
   {
@@ -12,19 +11,22 @@ return {
     config = function()
       local fts = {}
       local i = 1
+
       for _, config in pairs(user_config.filetypes) do
         if config:has_lsp_config() then
           fts[i] = config
           i = i + 1
         end
       end
+
       local capabilities = require('blink.cmp').get_lsp_capabilities()
       for _, ft in ipairs(fts) do
         local server, config = ft:get_lsp_config()
-        vim.lsp.config(server, config)
-        require('lspconfig')[server].setup {
+        config = vim.deepcopy(config)
+        config = dict.merge(config, {
           capabilities = vim.deepcopy(capabilities)
-        }
+        })
+        vim.lsp.config(server, config)
         vim.lsp.enable(server)
       end
     end
@@ -34,6 +36,23 @@ return {
     opts = {
       library = {
         { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+      },
+    },
+  },
+  {
+    "folke/trouble.nvim",
+    opts = {},
+    cmd = "Trouble",
+    keys = {
+      {
+        "<leader>l.",
+        "<cmd>Trouble diagnostics toggle<cr>",
+        desc = "Diagnostics (Trouble)",
+      },
+      {
+        "<leader>ld",
+        "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+        desc = "Buffer Diagnostics (Trouble)",
       },
     },
   }

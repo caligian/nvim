@@ -1,6 +1,6 @@
 require 'lib.utils'
 
-local types = {_base = {}}
+types = {}
 local list = require('lib.list')
 
 function types.userdata(x)
@@ -47,7 +47,6 @@ function types.table(x)
   end
 end
 
-
 function types.string(x)
   if x == nil then
     return false, 'expected string, got nothing'
@@ -58,7 +57,6 @@ function types.string(x)
     return true
   end
 end
-
 
 function types.boolean(x)
   if x == nil then
@@ -258,7 +256,7 @@ function types.assert(x, cond, name)
     msg = msg or ''
     if name then
       error(name .. ': ' .. msg)
-    else
+  else
       error(msg)
     end
   else
@@ -267,27 +265,24 @@ function types.assert(x, cond, name)
 end
 
 function types.inherits(child, parent)
-  local ok, msg = types.table(child)
+  if child == nil and parent == nil then
+    return true
+  elseif child == nil then
+    return false, 'child: expected object, got nothing'
+  elseif parent == nil then
+    return false, 'parent: expected object, got nothing'
+  end
+
+  local ok, msg = types.object(child)
   if not ok then return false, 'child: ' .. msg end
 
-  ok, msg = types.table(parent)
+  ok, msg = types.object(parent)
   if not ok then return false, 'parent: ' .. msg end
 
-  if not child.__inherits then
-    return false, sprintf('child: lacks __inherits attribute, likely not an object: %s', child)
-  elseif not parent.__inherits then
-    return false, sprintf('parent: lacks __inherits attribute, likely not an object: %s', parent)
-  elseif child == parent or child.__inherits == parent then
+  if child == parent then
     return true
-  else
-    local child_attribs = child:get_attributes()
-    local parent_attribs = parent:get_attributes()
-    table.sort(child_attribs)
-    table.sort(parent_attribs)
-
-    if vim.deep_equal(child_attribs, parent_attribs) then
-      return true
-    end
+  elseif child.__inherits ~= nil and child.__inherits == parent then
+    return true
   end
 
   if child.__instance then child = child.__class end
@@ -295,7 +290,7 @@ function types.inherits(child, parent)
   local inherits = child.__inherits
 
   while true do
-    if inherits == types._base then
+    if inherits == nil then
       return false, sprintf('expected object %s, got %s', parent.__name, child)
     elseif inherits == parent then
       return true
@@ -315,11 +310,13 @@ function types.optional(cond)
   end
 end
 
-function types.get_name(x)
+function types.type(x)
   if types.object(x) then
     return x.__name
   elseif types.list(x) then
     return 'list'
+  elseif types.dict(x) then
+    return 'dict'
   else
     return type(x)
   end
@@ -330,6 +327,7 @@ function types.union(...)
   return function (x)
     local ok, msg
     local msgs = {}
+
     for _, sig in ipairs(signature) do
       ok, msg = types.is(x, sig)
       if ok then
@@ -395,177 +393,6 @@ function types.table_of(key_f, value_f)
       end
     end
     return true
-  end
-end
-
-types.default = {
-  __name = 'default',
-  __inherits = types._base,
-  is = types.is,
-  includes = types.includes,
-  inherits = types.inherits,
-  initialize = function(self, ...)
-    local _ = {...}
-    return self
-  end,
-  include = function(self, from)
-    for key, value in pairs(from) do
-      if self[key] == nil then
-        self[key] = value
-      end
-    end
-    return self
-  end,
-  get_attributes = function(self)
-    local res = {}
-    for key, _ in pairs(self) do
-      local test = key ~= 'is' and key ~= 'includes'
-      test = test and key ~= 'inherits' and key ~= 'attributes'
-      test = test and key ~= 'include' and key ~= 'initialize' and key ~= 'includes'
-      test = test and key ~= 'get_attributes' and key ~= 'attributes'
-      test = test and not string.match(key, '^__')
-      test = test and key ~= 'new'
-      test = test and key ~= 'as_list'
-      if test then res[#res+1] = key end
-    end
-    return res
-  end,
-  attributes = function(self)
-    local res = {}
-    for key, value in pairs(self) do
-      local test = key ~= 'is' and key ~= 'includes'
-      test = test and key ~= 'inherits' and key ~= 'attributes'
-      test = test and key ~= 'include' and key ~= 'initialize' and key ~= 'includes'
-      test = test and key ~= 'get_attributes' and key ~= 'attributes'
-      test = test and not string.match(key, '^__')
-      test = test and key ~= 'new'
-      test = test and key ~= 'as_list' and key ~= 'as_dict'
-      test = test and key ~= 'create_instance_method'
-      if test then res[key] = value end
-    end
-    return res
-  end,
-  new = function(self, ...)
-    local obj = {__instance = true}
-    for key, value in pairs(self) do
-      if key ~= 'new' then
-        obj[key] = value
-      end
-    end
-
-    obj.__class = self
-    setmetatable(obj, obj)
-
-    function obj:create_instance_method(...)
-      return partial(self, ...)
-    end
-
-    obj:initialize(...)
-
-    return obj
-  end,
-  as_list = function(self)
-    local res = {}
-    for i=1, #self do
-      res[#res+1] = self[i]
-    end
-    return res
-  end,
-  as_dict = function(self)
-    return self:attributes()
-  end
-}
-
-types.default.__index = types._base
-setmetatable(types.default, types.default)
-
-function types.new(name, inherits)
-  inherits = inherits or types.default
-  local cls = { __name = name, __index = inherits, __inherits = inherits }
-  setmetatable(cls, cls)
-
-  for key, value in pairs(inherits:attributes()) do
-    local _value = rawget(cls, key)
-    if _value == nil then
-      rawset(cls, key, value)
-    end
-  end
-
-  return cls
-end
-
---- type validator
-local function validate_table(x, spec, prefix)
-  for key, validator in pairs(spec) do
-    local name = key
-    local is_opt = string.match(name, '^opt_') or string.match(name, '^[?]')
-    name = name:gsub('^opt_', '')
-    name = name:gsub('^[?]', '')
-    local value = x[name]
-
-    if not (value == nil and is_opt) then
-      local prefixed_key
-      if prefix then
-        prefixed_key = prefix .. '.' .. name
-      else
-        prefixed_key = name
-      end
-
-      if types.object(validator) or types.fun(validator) then
-        types.assert(value, validator, prefixed_key)
-      elseif type(validator) == 'table' then
-        if type(value) == 'table' then
-          validate_table(value, validator, prefixed_key)
-        else
-          error(sprintf('%s: expected table, got %s', value))
-        end
-      else
-        types.assert(value, validator, prefixed_key)
-      end
-    end
-  end
-end
-
-types.validate = {}
-local validate = types.validate
-setmetatable(types.validate, types.validate)
-
-function validate:__call(specs)
-  for key, spec in pairs(specs) do
-    local name, validator, obj = key, spec[1], spec[2]
-    local is_opt = string.match(key, '^opt_') or string.match(key, '^[?]')
-
-    types.assert(
-      validator,
-      types.union(types.callable, types.string, types.table),
-      name
-    )
-
-    if not (is_opt and obj == nil) then
-      if types.string(validator) then
-        local ok, msg = types.is(obj, validator)
-        if not ok then
-          msg = msg or 'assertion failed'
-          msg = key .. ': ' .. msg
-          error(msg)
-        end
-      elseif types.fun(validator) or types.object(obj) then
-        types.assert(obj, validator, key)
-      elseif types.table(validator) then
-        local ok, msg = types.table(obj)
-        if not ok then
-          msg = key .. ': ' .. msg
-          error(msg)
-        end
-        validate_table(obj, validator, key)
-      end
-    end
-  end
-end
-
-function validate:__index(name)
-  return function(obj, validator)
-    validate {[name] = {validator, obj}}
   end
 end
 

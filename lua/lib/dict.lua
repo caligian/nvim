@@ -73,7 +73,7 @@ end
 function dict.map(x, f)
   local res = {}
   for key, value in pairs(x) do
-    res[key] = f(value)
+    res[key] = f(key, value)
   end
   return res
 end
@@ -201,9 +201,19 @@ function dict.from_keys(ks, default_fn)
 end
 
 function dict.each(x, callback)
-  for key, value in pairs(callback) do
+  for key, value in pairs(x) do
     callback(key, value)
   end
+end
+
+function dict.items(x)
+  local res = {}
+  local ind = 1
+  for key, value in pairs(x) do
+    res[ind] = {key, value}
+    ind = ind + 1
+  end
+  return res
 end
 
 return dict

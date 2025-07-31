@@ -1,11 +1,8 @@
+local class = require('lib.class')
 local types = require('lib.type')
-local list = require('lib.list')
 local dict = require('lib.dict')
-local buffer = require('lib.buffer')
 local terminal = require('lib.terminal')
-local nvim = require('lib.nvim')
-local repl = types.new('repl', terminal)
-local uv = vim.uv
+local repl = class('repl', terminal)
 
 -- opts = {
 --   command = types.string,
@@ -33,23 +30,23 @@ function repl:initialize(cwd, opts)
   terminal.initialize(self, opts.command or opts.cmd, cwd)
 
   if self.shell then
-    self.cmd = user_config.shell_command or 'bash'
+    self.cmd = config.shell_command or 'bash'
     self.command = self.cmd
-    user_config.repls.shells[cwd] = self
+    config.repls.shells[cwd] = self
   else
     types.validate.filetype(opts.filetype, types.string)
-    user_config.repls.repls[cwd] = user_config.repls.repls[cwd] or {}
-    user_config.repls.repls[cwd][self.filetype] = self
+    config.repls.repls[cwd] = config.repls.repls[cwd] or {}
+    config.repls.repls[cwd][self.filetype] = self
   end
 end
 
 function repl:exists(callback)
   local exists
   if self.shell then
-    exists = user_config.repls.shells[self.cwd]
+    exists = config.repls.shells[self.cwd]
   else
     exists = dict.get(
-      user_config.repls.repls,
+      config.repls.repls,
       {self.cwd, self.filetype}
     )
   end
@@ -65,6 +62,7 @@ function repl:send(s)
   if self.input_use_file then
     local filename = vim.fn.tempname()
     local fh = io.open(filename, 'w')
+
     fh:write(s)
     fh:close()
 
@@ -73,7 +71,7 @@ function repl:send(s)
 
     local timer = vim.uv.new_timer()
     timer:start(10000, 0, vim.schedule_wrap(function ()
-      pcall(vim.fs.rm, name)
+      pcall(vim.fs.rm, filename)
       timer:stop()
       timer:close()
     end))

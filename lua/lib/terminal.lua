@@ -1,7 +1,9 @@
 local buffer = require('lib.buffer')
 local types = require('lib.type')
 local nvim = require('lib.nvim')
-local terminal = types.new('terminal')
+local class = require('lib.class')
+
+local terminal = class 'terminal'
 
 function terminal:initialize(cmd, cwd)
   cwd = ifnil(cwd, vim.fn.getcwd(), cwd)

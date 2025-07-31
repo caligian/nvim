@@ -1,3 +1,4 @@
+user_config.buffer_groups = {}
 user_config.filetypes = user_config.filetypes or {}
 user_config.terminals = user_config.terminals or {}
 user_config.repls = user_config.repls or { repls = {}, shells = {}, shell = false }
@@ -10,10 +11,17 @@ user_config.filetypes_dir = user_config.config_dir .. '/filetypes'
 user_config.data_dir = vim.fn.stdpath('data')
 user_config.workspaces = user_config.workspaces or {}
 user_config.shell_command = user_config.shell_command or 'bash'
+user_config.telescope = {
+  theme = 'ivy',
+  disable_devicons = true,
+  previewer = false,
+  layout_config = {height = 13}
+}
 
 local str = require('lib.string')
 local list = require('lib.list')
 local dict = require('lib.dict')
+local class = require('lib.class')
 local types = require('lib.type')
 local augroup = require('lib.augroup')
 local window = require('lib.window')
@@ -23,7 +31,11 @@ local filetype  = require('lib.filetype')
 local repl = require('lib.repl')
 local nvim = require('lib.nvim')
 local terminal = require('lib.terminal')
+local buffer_group = require('lib.buffer_group')
+local picker = require('lib.picker')
 
+user_config.class = class
+user_config.buffer_group = buffer_group
 user_config.terminal = terminal
 user_config.str = str
 user_config.list = list
@@ -36,6 +48,7 @@ user_config.filetype = filetype
 user_config.repl = repl
 user_config.tabpage = tabpage
 user_config.nvim = nvim
+user_config.picker = picker
 
 function user_config:path(...)
   local args = {...}

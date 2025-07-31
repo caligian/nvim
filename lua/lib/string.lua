@@ -1,5 +1,4 @@
 local str = {}
-user_config.str = str
 
 str.trim = vim.trim
 str.startswith = vim.startswith
