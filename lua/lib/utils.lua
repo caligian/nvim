@@ -95,4 +95,10 @@ function pp(...)
   printf('%s', ...)
 end
 
+function paste0(...)
+  local args = {...}
+  for i=1, #args do args[i] = tostring(args[i]) end
+  return table.concat(args, '')
+end
+
 inspect = vim.inspect

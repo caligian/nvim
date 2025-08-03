@@ -29,7 +29,6 @@ function list.push(x, ...)
   return x
 end
 
-
 function list.unpush(x, ...)
   for _, arg in ipairs(list.reverse({...})) do
     table.insert(x, 1, arg)
@@ -240,6 +239,12 @@ function list.flatten(x, res)
     end
   end
   return res
+end
+
+function list.each(x, f)
+  for i=1, #x do
+    f(x[i])
+  end
 end
 
 list.append = list.push

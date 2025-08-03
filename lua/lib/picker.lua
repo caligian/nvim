@@ -15,10 +15,13 @@ function picker:initialize(title)
     actions = require 'telescope.actions',
     actions_state = require 'telescope.actions.state',
   }
+
   local themes = require("telescope.themes")
   local theme = themes['get_' .. user_config.telescope.theme]()
-  local opts = vim.deepcopy(user_config.telescope)
-  opts.theme = nil
+
+  local opts = user_config.telescope.opts or {}
+  V.telescope_opts(opts, 'table')
+
   self.telescope.theme = dict.merge(theme, opts, true)
   self.actions = {}
   self.title = title
@@ -37,8 +40,10 @@ function picker:call(what, method, ...)
   return self.telescope[what][method](...)
 end
 
-function picker:entry()
-  return self.state.get_selected_entry()
+function picker:entry(bufnr)
+  local x = self.state.get_selected_entry()
+  self:close(bufnr)
+  return x
 end
 
 function picker:entries(bufnr)
@@ -48,8 +53,11 @@ function picker:entries(bufnr)
   end
 
   local gotten = x:get_multi_selection()
-  gotten = ifelse(#gotten == 0, {self:entry()}, gotten)
-  self:close(bufnr)
+  if #gotten == 0 then
+    gotten = {self:entry(bufnr)}
+  else
+    self:close(bufnr)
+  end
 
   return gotten
 end
@@ -101,8 +109,9 @@ function picker:create(xs, default_mapping, opts)
   opts.sorted = nil
   local args = {}
 
+  V.keymaps(mappings, 'table')
+
   if #mappings > 0 then
-    V.keymaps(mappings, 'list')
     for i=1, #mappings do
       local cb = self.actions[mappings[i][3]]
       V.callback(cb, types.callable)

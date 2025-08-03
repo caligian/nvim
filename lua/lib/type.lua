@@ -94,7 +94,7 @@ end
 function types.callable(x)
   if x == nil then
     return false, 'expected function|callable, got nothing'
-  elseif not types.fun and not types.table(x) then
+  elseif not types.fun(x) and not types.table(x) then
     return false, sprintf('expected function | callable, got %s', x)
   elseif types.fun(x) then
     return true

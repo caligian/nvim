@@ -1,4 +1,5 @@
 user_config.buffer_groups = {}
+user_config.buffers = {}
 user_config.filetypes = user_config.filetypes or {}
 user_config.terminals = user_config.terminals or {}
 user_config.repls = user_config.repls or { repls = {}, shells = {}, shell = false }
@@ -13,9 +14,11 @@ user_config.workspaces = user_config.workspaces or {}
 user_config.shell_command = user_config.shell_command or 'bash'
 user_config.telescope = {
   theme = 'ivy',
-  disable_devicons = true,
-  previewer = false,
-  layout_config = {height = 13}
+  opts = {
+    disable_devicons = true,
+    previewer = false,
+    layout_config = {height = 13}
+  }
 }
 
 local str = require('lib.string')
@@ -33,6 +36,7 @@ local nvim = require('lib.nvim')
 local terminal = require('lib.terminal')
 local buffer_group = require('lib.buffer_group')
 local picker = require('lib.picker')
+local autocmd = require 'lib.autocmd'
 
 user_config.class = class
 user_config.buffer_group = buffer_group
@@ -81,6 +85,32 @@ function user_config:set_filetypes()
   end
 end
 
+function user_config:set_buffer_groups()
+  buffer_group.setup()
+  autocmd('BufRead', '*', function (args)
+    local ws = user_config:root_dir(args.buf)
+    if not ws then
+      return
+    end
+
+    local exists = user_config.buffer_groups[ws]
+    if exists and exists.group then
+      return
+    else
+      local group = buffer_group(ws, ws)
+      group:enable()
+      group:add(args.buf)
+    end
+  end)
+
+  for name, config in pairs(self.filetypes) do
+    local group = buffer_group(name, function (bufnr)
+      return buffer.filetype(bufnr) == name
+    end)
+    group:enable()
+  end
+end
+
 function user_config:load_plugins()
   require('config.lazy')
 end
@@ -97,67 +127,21 @@ function user_config:set_autocmds()
    require('config.autocmds')
 end
 
-function user_config:repl_root_dir(bufnr)
+function user_config:root_dir(bufnr)
   local bufname = buffer.name(bufnr)
   local ft = buffer.filetype(bufnr)
-  local repl_opts = dict.get(self.filetypes, {ft, 'repl'})
+  local opts = dict.get(self.filetypes, {ft, 'root'}) or {}
 
-  if not bufname:match('[a-zA-Z0-9]') or not ft:match('[a-zA-Z0-9]') then
+  if not bufname:match('[a-zA-Z0-9]') then
     return false
-  elseif not repl_opts then
+  elseif not ft:match('[a-zA-Z0-9]') then
     return false
   end
 
   return buffer.workspace(bufnr, {
-    pattern = dict.get(repl_opts, {'root', 'pattern'}) or {'.git'},
-    check_depth = dict.get(repl_opts, {'root', 'check_depth'}) or 4,
+    pattern = dict.get(opts, {'root', 'pattern'}) or {'.git'},
+    check_depth = dict.get(opts, {'root', 'check_depth'}) or 4,
   })
-end
-
-function user_config:get_repl(bufnr, shell, running)
-  local cwd = self:repl_root_dir(bufnr)
-  if not cwd then
-    return false
-  end
-
-  local exists
-  if shell then
-    exists = self.repls.shells[cwd]
-  else
-    local ft = buffer.filetype(bufnr)
-    exists = dict.get(self.repls.repls, {cwd, ft})
-  end
-
-  if exists then
-    if running and not exists:running() then
-      return false
-    else
-      return exists
-    end
-  end
-end
-
-function user_config:create_repl(bufnr, shell)
-  local exists = self:get_repl(bufnr, shell, true)
-  if exists then
-    return exists
-  end
-
-  local ws = self:repl_root_dir(bufnr)
-  if not ws then
-    return false
-  end
-
-  local ft = buffer.filetype(bufnr)
-  local opts = self.filetypes[ft].repl
-
-  if shell then
-    opts = dict.merge(vim.deepcopy(opts), {shell = true})
-  else
-    opts = dict.merge(vim.deepcopy(opts), {filetype = ft})
-  end
-
-  return repl:new(ws, opts)
 end
 
 function user_config:on_exit(name, pattern, callback)
@@ -175,21 +159,7 @@ function user_config:setup()
   self:set_opts()
   self:set_autocmds()
   self:set_keymaps()
-end
-
-function user_config:start_shell()
-  if not user_config.repls.shell then
-    user_config.repls.shell = user_config.terminal:new(
-      user_config.shell_command,
-      os.getenv('HOME')
-    )
-  end
-  local term = user_config.repls.shell
-  if not term then
-    return false
-  else
-    term:start()
-  end
+  self:set_buffer_groups()
 end
 
 return user_config

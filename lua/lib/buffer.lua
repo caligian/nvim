@@ -342,8 +342,10 @@ end
 
 function buffer.root_dir(bufnr, pat, depth)
   bufnr = bufnr or vim.fn.bufnr()
-  local bufname = vim.fn.bufname(bufnr)
+  local bufname = buffer.name(bufnr)
   local ws = vim.fs.find(pat, {upward = true, limit = depth or 4})
+  pat = pat or {'.git'}
+  depth = depth or 4
 
   if #ws == 0 then
     return vim.fs.dirname(bufname)
@@ -360,8 +362,8 @@ end
 
 function buffer.workspace(bufnr, opts)
   opts = opts or {}
-  local pat = opts.pattern or opts.pat
-  local depth = opts.depth or opts.check_depth
+  local pat = opts.pattern or opts.pat or {'.git'}
+  local depth = opts.depth or opts.check_depth or 4
   local callback = opts.callback
   bufnr = bufnr or vim.fn.bufnr()
   local exists = user_config.workspaces[bufnr]
@@ -378,6 +380,5 @@ function buffer.workspace(bufnr, opts)
     end
   end
 end
-
 
 return buffer

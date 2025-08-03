@@ -6,6 +6,18 @@ return {
     opts = {}
   },
   {
+    'stevearc/aerial.nvim',
+    config = function ()
+      require("aerial").setup({
+        on_attach = function(bufnr)
+          vim.keymap.set("n", "g{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
+          vim.keymap.set("n", "g}", "<cmd>AerialNext<CR>", { buffer = bufnr })
+        end,
+      })
+      vim.keymap.set("n", "<leader>a", "<cmd>AerialToggle!<CR>")
+    end
+  },
+  {
     'neovim/nvim-lspconfig',
     dependencies = {'saghen/blink.cmp'},
     config = function()
@@ -42,19 +54,6 @@ return {
   {
     "folke/trouble.nvim",
     opts = {},
-    cmd = "Trouble",
-    keys = {
-      {
-        "<leader>l.",
-        "<cmd>Trouble diagnostics toggle<cr>",
-        desc = "Diagnostics (Trouble)",
-      },
-      {
-        "<leader>ld",
-        "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
-        desc = "Buffer Diagnostics (Trouble)",
-      },
-    },
   }
 }
 

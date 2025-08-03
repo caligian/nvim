@@ -2,7 +2,12 @@ return {
   name = 'r',
   repl = {command = 'R'},
   autocmds = {
-    disable_diagnostics = function () vim.lsp.disable(0) end
+    disable_diagnostics = function ()
+      vim.diagnostic.config({
+        virtual_text = false,
+        sign = false
+      })
+    end
   },
   buffer = {
     opts = {

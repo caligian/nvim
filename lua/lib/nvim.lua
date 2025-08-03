@@ -1,8 +1,6 @@
 require('lib.utils')
 
 local list = require('lib.list')
-local dict = require('lib.dict')
-local types = require('lib.type')
 local validate = require('lib.validate')
 local nvim = {}
 
@@ -83,7 +81,6 @@ function nvim.require2path(require_string, dir)
   dir = ifnil(dir, vim.fn.stdpath('config')) .. '/lua'
   require_string = vim.split(require_string, '[.]')
   local path = list.join(list.cat(dir, require_string), '/')
-  pp(path)
 
   return path
 end
@@ -107,8 +104,39 @@ function nvim.path2require(path)
   return path
 end
 
+function nvim.file_exists(file)
+  return vim.fn.filereadable(file) == 1
+end
+
+function nvim.dir_exists(file)
+  return vim.fn.isdirectory(file) == 1
+end
+
 function nvim.require_path(path)
-  return require(nvim.path2require(path))
+  if not (nvim.file_exists(path) or nvim.dir_exists(path)) then
+    return false
+  else
+    return require(nvim.path2require(path))
+  end
+end
+
+function nvim.require(require_path, callback)
+  local path = nvim.require2path(require_path)
+  local luafile = paste0(path, '.lua')
+  local dirfile = paste0(path, '/init.lua')
+  local mod
+
+  if nvim.file_exists(luafile) then
+    mod = require(require_path)
+  elseif nvim.dir_exists(dirfile) then
+    mod = require(require_path)
+  end
+
+  if mod then
+    return ifelse(callback, callback(mod), mod)
+  else
+    return false
+  end
 end
 
 return nvim

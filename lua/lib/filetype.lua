@@ -6,6 +6,7 @@ local validate = require('lib.validate')
 local str = require('lib.string')
 local nvim = require('lib.nvim')
 local class = require('lib.class')
+local buffer_group = require 'lib.buffer_group'
 
 --- Valid options
 -- {
@@ -15,15 +16,14 @@ local class = require('lib.class')
 --     vars = {a = 1, b = 2, c = 3},
 --     opts = {c = 2, d = 10}
 --   },
+--   root = {
+--     pattern = {'.git'},
+--     check_depth = 4,
+--   },
 --   lsp = {'jedi_language_server', ...lsp_settings},
 --   shell_command = 'bash',
 --   repl = {
 --     command = 'ipython3', -- dir will be set to root
---     root = {
---       pattern = {'.git'},
---       check_depth = 4,
---       home = false,
---     },
 --     input = {
 --       use_file = true,
 --       file_string = '%%load %s',
@@ -32,7 +32,7 @@ local class = require('lib.class')
 --   }
 -- }
 
-local filetype = class('filetype')
+local filetype = class 'filetype'
 
 local function update_lsp_config(opts)
   local server
@@ -49,16 +49,15 @@ local function update_lsp_config(opts)
     return
   end
 
-  dict.set_unless(opts, {'repl', 'root'}, {})
-
-  if not opts.repl.root.pattern then
+  if not dict.get(opts, {'root', 'pattern'}) then
     if config.root_markers then
-      opts.repl.root.pattern = config.root_markers
+      dict.set(opts, {'root', 'pattern'}, config.root_markers, true)
     else
-      opts.repl.root.pattern = {'.git'}
+      dict.set(opts, {'root', 'pattern'}, {'.git'}, true)
     end
-    opts.repl.root.check_depth = opts.repl.root.check_depth or 4
   end
+
+  dict.set_unless(opts, {'root', 'check_depth'}, 4)
 end
 
 function filetype:initialize(opts)
@@ -77,10 +76,6 @@ function filetype:initialize(opts)
     opt_lsp = types.table,
     opt_repl = {
       command = types.string,
-      opt_root = {
-        opt_pattern = types.list_of('string'),
-        opt_check_depth = types.number
-      },
       opt_input = {
         opt_use_file = types.boolean,
         opt_file_string = types.string,
@@ -143,26 +138,38 @@ function filetype:set_keymaps()
   end
 end
 
+function filetype:set_buffer_group()
+  if self.buffer_group then
+    return self.buffer_group
+  else
+    self.buffer_group = buffer_group(self.name, function (bufnr)
+      return buffer.filetype(bufnr) == self.name
+    end)
+    self.buffer_group:enable()
+    return self.buffer_group
+  end
+end
+
 function filetype:set_buf_vars()
-    self.augroup:add_autocmd('FileType', self.name, function()
-        if self.buffer and self.buffer.vars then
-            local curbuf = buffer.current()
-            for key, value in pairs(self.buffer.vars) do
-                buffer.set_var(curbuf, key, value)
-            end
-        end
-    end, {name = 'buffer.variables'})
+  self.augroup:add_autocmd('FileType', self.name, function()
+    if self.buffer and self.buffer.vars then
+      local curbuf = buffer.current()
+      for key, value in pairs(self.buffer.vars) do
+        buffer.set_var(curbuf, key, value)
+      end
+    end
+  end, {name = 'buffer.variables'})
 end
 
 function filetype:set_buf_opts()
-    self.augroup:add_autocmd('FileType', self.name, function()
-        if self.buffer and self.buffer.opts then
-            local curbuf = buffer.current()
-            for key, value in pairs(self.buffer.opts) do
-                buffer.set_opt(curbuf, key, value)
-            end
-        end
-    end, {name = 'buffer.options'})
+  self.augroup:add_autocmd('FileType', self.name, function()
+    if self.buffer and self.buffer.opts then
+      local curbuf = buffer.current()
+      for key, value in pairs(self.buffer.opts) do
+        buffer.set_opt(curbuf, key, value)
+      end
+    end
+  end, {name = 'buffer.options'})
 end
 
 function filetype:add_autocmd(callback, opts)
@@ -201,11 +208,29 @@ function filetype:query(...)
   return dict.get(self, {...})
 end
 
+function filetype:root_dir(bufnr)
+  local bufname = buffer.name(bufnr)
+  local ft = buffer.filetype(bufnr)
+  local repl_opts = dict.get(self, {'root', 'pattern'})
+
+  if not bufname:match('[a-zA-Z0-9]') or not ft:match('[a-zA-Z0-9]') then
+    return false
+  elseif not repl_opts then
+    return false
+  end
+
+  return buffer.workspace(bufnr, {
+    pattern = dict.get(repl_opts, {'root', 'pattern'}) or {'.git'},
+    check_depth = dict.get(repl_opts, {'root', 'check_depth'}) or 4,
+  })
+end
+
 function filetype:setup()
   self:set_buf_vars()
   self:set_buf_opts()
   self:set_autocmds()
   self:set_keymaps()
+  self:set_buffer_group()
   self.loaded = true
   return self
 end

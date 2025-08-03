@@ -1,7 +1,10 @@
 local class = require('lib.class')
+local buffer = require 'lib.buffer'
 local types = require('lib.type')
 local dict = require('lib.dict')
 local terminal = require('lib.terminal')
+local validate = require 'lib.validate'
+
 local repl = class('repl', terminal)
 
 -- opts = {
@@ -30,23 +33,23 @@ function repl:initialize(cwd, opts)
   terminal.initialize(self, opts.command or opts.cmd, cwd)
 
   if self.shell then
-    self.cmd = config.shell_command or 'bash'
+    self.cmd = user_config.shell_command or 'bash'
     self.command = self.cmd
-    config.repls.shells[cwd] = self
+    user_config.repls.shells[cwd] = self
   else
-    types.validate.filetype(opts.filetype, types.string)
-    config.repls.repls[cwd] = config.repls.repls[cwd] or {}
-    config.repls.repls[cwd][self.filetype] = self
+    validate.filetype(opts.filetype, types.string)
+    user_config.repls.repls[cwd] = user_config.repls.repls[cwd] or {}
+    user_config.repls.repls[cwd][self.filetype] = self
   end
 end
 
 function repl:exists(callback)
   local exists
   if self.shell then
-    exists = config.repls.shells[self.cwd]
+    exists = user_config.repls.shells[self.cwd]
   else
     exists = dict.get(
-      config.repls.repls,
+      user_config.repls.repls,
       {self.cwd, self.filetype}
     )
   end
@@ -66,7 +69,7 @@ function repl:send(s)
     fh:write(s)
     fh:close()
 
-    types.validate.file_string(self.input_file_string, 'string')
+    validate.file_string(self.input_file_string, 'string')
     s = self.input_file_string:format(filename)
 
     local timer = vim.uv.new_timer()
@@ -78,6 +81,67 @@ function repl:send(s)
   end
 
   return terminal.send(self, s)
+end
+
+function repl.get(bufnr, shell, running)
+  local cwd = user_config:root_dir(bufnr)
+  if not cwd then
+    return false
+  end
+
+  local exists
+  if shell then
+    exists = user_config.repls.shells[cwd]
+  else
+    local ft = buffer.filetype(bufnr)
+    exists = dict.get(user_config.repls.repls, {cwd, ft})
+  end
+
+  if exists then
+    if running and not exists:running() then
+      return false
+    else
+      return exists
+    end
+  end
+end
+
+function repl.create(bufnr, shell)
+  local exists = repl.get(bufnr, shell, true)
+  if exists then
+    return exists
+  end
+
+  local ws = user_config:root_dir(bufnr)
+  if not ws then
+    return false
+  end
+
+  local ft = buffer.filetype(bufnr)
+  local opts = user_config.filetypes[ft].repl
+
+  if shell then
+    opts = dict.merge(vim.deepcopy(opts), {shell = true})
+  else
+    opts = dict.merge(vim.deepcopy(opts), {filetype = ft})
+  end
+
+  return repl(ws, opts)
+end
+
+function repl.start_shell()
+  if not user_config.repls.shell then
+    user_config.repls.shell = terminal(
+      user_config.shell_command,
+      os.getenv('HOME')
+    )
+  end
+  local term = user_config.repls.shell
+  if not term then
+    return false
+  else
+    term:start()
+  end
 end
 
 return repl

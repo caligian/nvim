@@ -43,12 +43,10 @@ vim.keymap.set('n', '<space>ee', function()
 end, {desc = 'Lua eval line'})
 
 --- REPL stuff
-local buffer = user_config.buffer
-
 local function get_repl(shell, running, callback)
   return function ()
     local bufnr = vim.fn.bufnr()
-    local exists = user_config:get_repl(bufnr, shell, running)
+    local exists = user_config.repl.get(bufnr, shell, running)
     if exists then
       if running then
         return exists:running() and callback(exists)
@@ -62,25 +60,13 @@ end
 local function create_repl(shell, callback)
   return function ()
     local bufnr = vim.fn.bufnr()
-    local term = user_config:create_repl(bufnr, shell)
+    local term = user_config.repl.create(bufnr, shell)
     if term then return callback(term) end
   end
 end
 
-local function create_shell(callback)
-  return create_repl(true, callback)
-end
-
-local function get_shell(running, callback)
-  return get_repl(true, running, callback)
-end
-
 local function get_running_repl(shell, callback)
   return get_repl(shell, true, callback)
-end
-
-local function get_running_shell(callback)
-  return get_repl(true, true, callback)
 end
 
 local kset = vim.keymap.set
@@ -165,7 +151,7 @@ local function shell_call(method, running)
   return function ()
     local term = user_config.repls.shell
     if not term then
-      user_config:start_shell()
+      user_config.repl.start_shell()
     end
 
     if term then
@@ -195,24 +181,87 @@ kset('n', '<space>xq', function ()
 end, {desc = 'Kill'})
 
 --- Telescope scope
-vim.cmd([[
-nnoremap <space>f. <cmd>Telescope find_files<cr>
-nnoremap <space>fg <cmd>Telescope git_files<cr>
-nnoremap <space>? <cmd>Telescope live_grep<cr>
-nnoremap <space>/ <cmd>Telescope grep_string<cr>
-nnoremap <space>bb <cmd>Telescope buffers<cr>
-nnoremap <space>fr <cmd>Telescope oldfiles<CR>
-nnoremap <space>l? <cmd>Telescope lsp_document_symbols<CR>
-nnoremap <space>l/ <cmd>Telescope lsp_workspace_symbols<CR>
-nnoremap <space>ls <cmd>Telescope treesitter<CR>
-nnoremap <space>' <cmd>Telescope registers<CR>
-nnoremap <space><space> <cmd>Telescope resume<CR>
-]])
-kset('n', '<space>p', function ()
-  require('telescope').extensions.project.project {}
+local function topts()
+  return user_config.dict.merge(
+    user_config.telescope.opts,
+    require('telescope.themes').get_ivy()
+  )
+end
+
+local function tbuiltin(what)
+  return function ()
+    local builtin = require('telescope.builtin')
+    local fn = builtin[what]
+    if not fn then
+      return
+    else
+      fn(topts())
+    end
+  end
+end
+
+kset('n', '<space>f.', tbuiltin('find_files'), {desc = 'List dir'})
+kset('n', '<space>f?', tbuiltin('live_grep'), {desc = 'Live grep dir'})
+kset('n', '<space>fg', tbuiltin('git_files'), {desc = 'git ls-files'})
+kset('n', '<space>f/', tbuiltin('grep_string'), {desc = 'Grep dir'})
+kset('n', '<space>fr', tbuiltin('oldfiles'), {desc = 'List dir'})
+kset('n', '<space>bb', tbuiltin('buffers'), {desc = 'Buffers'})
+kset('n', "<space>'", tbuiltin('registers'), {desc = 'Registers'})
+
+-- LSP stuff
+kset('n', '<space>lw', tbuiltin('lsp_document_symbols'), {desc = 'Document symbols'})
+kset('n', '<space>lW', tbuiltin('lsp_workspace_symbols'), {desc = 'Document symbols'})
+kset('n', '<space>ld', '<cmd>Trouble diagnostics toggle filter.buf=0<CR>', {desc = 'Buffer diagnostics'})
+kset('n', '<space>lD', '<cmd>Trouble diagnostics toggle<CR>', {desc = 'Workspace diagnostics'})
+kset('n', '<space>ls', '<cmd>Trouble lsp toggle<CR>', {desc = 'Document symbols'})
+
+-- Git stuff
+kset('n', '<space>gb', tbuiltin('git_branches'), {desc = 'Git branches'})
+kset('n', '<space>gs', tbuiltin('git_status'), {desc = 'Git status'})
+kset('n', '<space>gc', tbuiltin('git_commits'), {desc = 'Git commits'})
+
+-- Misc
+kset('n', '<space><space>', tbuiltin('resume'), {desc = 'Resume picker'})
+kset('n', '<space>;', tbuiltin('builtin'), {desc = 'Builtin picker'})
+
+-- Project management
+kset('n', '<space>pp', function ()
+  require('telescope').extensions.project.project(topts())
 end, {desc = 'Projects'})
+
+-- File browser
 kset('n', '<space>ff', function ()
-  require("telescope").extensions.file_browser.file_browser()
+  require("telescope").extensions.file_browser.file_browser(topts())
 end, {desc = 'File browser'})
 
---- Trouble
+kset('n', '<space>bg', function ()
+  user_config.buffer_group.buffer_picker(vim.fn.bufnr())
+end, {desc = 'Show buffer groups for buffer'})
+
+kset('n', '<space>>', function ()
+  user_config.buffer_group.buffer_group_picker()
+end, {desc = 'Show buffer groups'})
+
+kset('n', '<space>pb', function ()
+  local bufnr = user_config.buffer.current()
+  local ws = user_config:root_dir(bufnr)
+  local exists = user_config.buffer_groups[ws]
+  if exists then exists:picker() end
+end, {desc = 'Show buffer groups'})
+
+kset('n', '<space>.', function ()
+  local bufnr = user_config.buffer.current()
+  local ft = user_config.buffer.filetype(bufnr)
+  local exists = user_config.buffer_groups[ft]
+  if exists then exists:picker() end
+end, {desc = 'Show buffer groups'})
+
+kset('n', '<space>?', function ()
+  require('which-key').show({global = false})
+end, {desc = "Show keymaps"})
+
+--- Git stuff
+vim.keymap.set('n', '<leader>gg', ':Git<CR>', {desc = "Git"})
+vim.keymap.set('n', '<leader>gs', ':Git stage %<CR>', {desc = "Git"})
+vim.keymap.set('n', '<leader>gc', ':Git commit<CR>', {desc = "Git"})
+vim.keymap.set('n', '<leader>gp', ':Git push<CR>', {desc = "Git"})
