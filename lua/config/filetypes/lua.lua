@@ -1,14 +1,6 @@
 return {
   name = 'lua',
   repl = { command = 'luajit' },
-  autocmds = {
-    disable_diagnostics = function (_)
-      vim.diagnostic.config {
-        virtual_text = false,
-        signs = true
-      }
-    end
-  },
   buffer = {
     opts = {
       shiftwidth = 2,

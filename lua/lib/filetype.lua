@@ -235,4 +235,13 @@ function filetype:setup()
   return self
 end
 
+-- Used for project files who do not have a ftconfig
+if not user_config.filetypes.shell then
+  user_config.filetypes.shell = filetype {
+    name = 'shell',
+    root = {pattern = {'.git'}, check_depth = 4},
+    repl = {command = user_config.shell_command or 'bash'}
+  }
+end
+
 return filetype

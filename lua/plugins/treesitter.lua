@@ -5,14 +5,17 @@ return {
     lazy = false,
     build = ":TSUpdate",
     config = function ()
-      require'nvim-treesitter.configs'.setup {
+      require('nvim-treesitter.configs').setup {
         ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", 'python', 'r' },
         sync_install = false,
         auto_install = true,
         ignore_install = { "javascript" },
         highlight = {
-          enable = true
+          enable = true,
         },
+        indent = {
+          enable = true,
+        }
       }
     end
 
@@ -41,7 +44,10 @@ return {
             enable = true,
             set_jumps = true,
             goto_next_start = {
+              ["]="] = "@assignment.lhs",
               ["]m"] = "@function.outer",
+              ["<A-f>"] = "@assignment.lhs",
+              ["<A-n>"] = "@function.outer",
               ["]]"] = { query = "@block.outer", desc = "Next block's start" },
               ["]o"] = "@loop.*",
               ["]s"] = { query = "@local.scope", query_group = "locals", desc = "Next scope" },
@@ -52,7 +58,10 @@ return {
               ["]["] = "@block.outer",
             },
             goto_previous_start = {
+              ["[="] = "@assignment.lhs",
+              ["<A-b>"] = "@assignment.lhs",
               ["[m"] = "@function.outer",
+              ["<A-p>"] = "@function.outer",
               ["[["] = "@block.outer",
             },
             goto_previous_end = {

@@ -247,6 +247,23 @@ function list.each(x, f)
   end
 end
 
+function list.zip2(x, y, mkdefault)
+  mkdefault = mkdefault or function ()
+    return false
+  end
+  local res = {}
+  local x_len = #x
+
+  for i=1, x_len do
+    local x_value = x[i]
+    local y_value = y[i]
+    if y_value == nil then y_value = mkdefault() end
+    res[i] = {x_value, y_value}
+  end
+
+  return res
+end
+
 list.append = list.push
 list.size = list.length
 

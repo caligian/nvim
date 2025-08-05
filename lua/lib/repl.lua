@@ -118,9 +118,12 @@ function repl.create(bufnr, shell)
   end
 
   local ft = buffer.filetype(bufnr)
-  local opts = user_config.filetypes[ft].repl
+  local opts = dict.get(user_config.filetypes, {ft, 'repl'})
+  opts = opts or user_config.filetypes.shell.repl
 
-  if shell then
+  if not opts then
+    return false
+  elseif shell then
     opts = dict.merge(vim.deepcopy(opts), {shell = true})
   else
     opts = dict.merge(vim.deepcopy(opts), {filetype = ft})

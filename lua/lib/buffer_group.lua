@@ -314,8 +314,18 @@ function buffer_group.buffer_group_picker(groups)
   local choices = groups
   local function entry_maker(entry)
     local name = entry.name:gsub(os.getenv('HOME'), '~')
+    local display
+
+    if types.callable(entry.pattern) then
+      display = name
+    elseif types.string(entry.pattern) then
+      display = sprintf('%s :: %s', name, entry.pattern)
+    else
+      display = name
+    end
+
     return {
-      display = sprintf('%s :: %s', name, entry.pattern),
+      display = display,
       ordinal = entry.name,
       value = entry
     }

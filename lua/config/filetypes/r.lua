@@ -1,14 +1,6 @@
 return {
   name = 'r',
   repl = {command = 'R'},
-  autocmds = {
-    disable_diagnostics = function ()
-      vim.diagnostic.config({
-        virtual_text = false,
-        sign = false
-      })
-    end
-  },
   buffer = {
     opts = {
       shiftwidth = 2,
@@ -19,4 +11,9 @@ return {
   lsp = {
     'r_language_server'
   },
+  autocmds = {
+    disable_ts_indent = function (args)
+      vim.cmd 'TSBufDisable indent'
+    end,
+  }
 }
