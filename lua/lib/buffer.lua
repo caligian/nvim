@@ -1,7 +1,7 @@
-require 'lib.utils'
-local list = require('lib.list')
-local dict = require('lib.dict')
-local types = require('lib.type')
+local utils = require 'lib.lua-utils'
+local list = utils.list
+local dict = utils.dict
+local types = utils.types
 local buffer = {}
 user_config.buffer = buffer
 

@@ -1,10 +1,11 @@
-local types = require('lib.type')
+local utils = require 'lib.lua-utils'
+local types = utils.types
+local list = utils.list
+local dict = utils.dict
+local class = utils.class
 local nvim = require('lib.nvim')
 local buffer = require('lib.buffer')
-local list = require('lib.list')
-local dict = require('lib.dict')
 local augroup = require('lib.augroup')
-local class = require('lib.class')
 local picker = require('lib.picker')
 
 --- @diagnostic disable: missing-fields
@@ -12,6 +13,7 @@ local picker = require('lib.picker')
 --- Buffer groups
 --- Somewhat like project management buffers
 local buffer_group = class 'buffer_group'
+user_config.buffer_group = buffer_group
 
 function buffer_group:initialize(name, pattern, event)
   self.event = event or 'BufRead'
@@ -21,7 +23,6 @@ function buffer_group:initialize(name, pattern, event)
   self.buffers = {}
   self.removed = {}
   self.cache = {buffers = {}, removed = {}}
-
   user_config.buffer_groups[name] = self
 end
 

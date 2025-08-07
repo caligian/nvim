@@ -1,10 +1,10 @@
-local class = require('lib.class')
+local utils = require 'lib.lua-utils'
+local class = utils.class
+local types = utils.types
+local dict = utils.dict
+local validate = utils.validate
 local buffer = require 'lib.buffer'
-local types = require('lib.type')
-local dict = require('lib.dict')
 local terminal = require('lib.terminal')
-local validate = require 'lib.validate'
-
 local repl = class('repl', terminal)
 
 -- opts = {

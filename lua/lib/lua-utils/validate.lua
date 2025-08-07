@@ -1,4 +1,4 @@
-local types = require('lib.type')
+local types = require('lib.lua-utils.type')
 local validate = {}
 setmetatable(validate, validate)
 
@@ -13,6 +13,7 @@ local function validate_table(x, spec, prefix)
 
     if not (value == nil and is_opt) then
       local prefixed_key
+
       if prefix then
         prefixed_key = prefix .. '.' .. name
       else

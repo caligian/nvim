@@ -1,11 +1,11 @@
-local types = require('lib.type')
-local validate = require('lib.validate')
+local types = require('lib.lua-utils.type')
+local validate = require('lib.lua-utils.validate')
 local class = {}
 
 setmetatable(class, class)
 
 class.child_of = types.inherits
-class.is_instance = types.instance 
+class.is_instance = types.instance
 class.is_class = types.class
 class.is_object = types.object
 class.inherits = types.inherits
@@ -22,7 +22,7 @@ function class.super(cls, ...)
     elseif x.initialize then
       return x.initialize
     elseif not x.__inherits then
-      return 
+      return
     end
 
     x = x.__inherits
@@ -99,33 +99,34 @@ function class:__call(name, inherits)
     __name = name,
     __inherits = inherits,
     include = class.include,
-    get_instance_methods = get_instance_methods,
+    get_instance_methods = class.get_instance_methods,
     attributes = class.attributes,
     child_of = class.child_of,
     parent_of = class.parent_of,
     is_instance = class.is_instance,
     get_class = class.get_class,
-    inherits = class.inherits, 
-    new = function (self, ...)
+    inherits = class.inherits,
+    new = function (cls_self, ...)
       local obj = {
-        __name = __name, 
+        __name = name,
         __instance = true,
-        __class = self,
-        __index = self,
+        __class = cls_self,
+        __index = cls_self,
         __inherits = inherits,
         include = class.include,
-        get_instance_methods = get_instance_methods,
+        get_instance_methods = class.get_instance_methods,
         attributes = class.attributes,
         child_of = class.child_of,
         parent_of = class.parent_of,
         is_instance = class.is_instance,
         get_class = class.get_class,
-        create_instance_method = function (self, method)
-          if not self[name] then
+        inherits = class.inherits,
+        create_instance_method = function (obj_self, method)
+          if not obj_self[name] then
             return false
           else
             return function (...)
-              return method(self, ...)
+              return method(obj_self, ...)
             end
           end
         end
@@ -133,8 +134,8 @@ function class:__call(name, inherits)
 
       setmetatable(obj, obj)
 
-      if self.initialize then
-        self.initialize(obj, ...)
+      if cls_self.initialize then
+        cls_self.initialize(obj, ...)
       else
         class.super(obj, ...)
       end

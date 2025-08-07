@@ -46,9 +46,9 @@ local function shell_call(method, running)
 end
 
 local function topts()
-  return user_config.dict.merge(
-    user_config.telescope.opts,
-    require('telescope.themes').get_ivy()
+  return user_config.dict.force_merge(
+    require('telescope.themes').get_ivy(),
+    user_config.telescope
   )
 end
 

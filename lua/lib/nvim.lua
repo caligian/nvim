@@ -1,7 +1,6 @@
-require('lib.utils')
-
-local list = require('lib.list')
-local validate = require('lib.validate')
+local utils = require('lib.lua-utils')
+local list = utils.list
+local validate = utils.validate
 local nvim = {}
 
 function nvim.normal()

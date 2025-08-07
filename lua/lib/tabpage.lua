@@ -1,5 +1,5 @@
 local tabpage = {}
-local list = require('lib.list')
+local list = require('lib.lua-utils.list')
 
 tabpage.get_number = vim.api.nvim_tabpage_get_number
 tabpage.is_valid = vim.api.nvim_tabpage_is_valid

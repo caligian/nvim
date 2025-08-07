@@ -1,10 +1,11 @@
-local types = require('lib.type')
-local validate = require('lib.validate')
-local class = require('lib.class')
-local dict = require('lib.dict')
+local utils = require 'lib.lua-utils'
+local types = utils.types
+local validate = utils.validate
+local class = utils.class
+local dict = utils.dict
 local V = validate
-
 local picker = class 'picker'
+user_config.picker = picker
 
 function picker:initialize(title)
   self.telescope = {
@@ -18,8 +19,7 @@ function picker:initialize(title)
 
   local themes = require("telescope.themes")
   local theme = themes['get_' .. user_config.telescope.theme]()
-
-  local opts = user_config.telescope.opts or {}
+  local opts = user_config.telescope or {}
   V.telescope_opts(opts, 'table')
 
   self.telescope.theme = dict.merge(theme, opts, true)

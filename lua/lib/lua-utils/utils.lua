@@ -1,4 +1,5 @@
-local list = require('lib.list')
+local tuple = require('lib.lua-utils.tuple')
+local list = require('lib.lua-utils.list')
 
 function ifelse(cond, when_true, when_false)
   if cond then
@@ -28,23 +29,24 @@ function apply(f, args, should_pcall)
 end
 
 function partial(f, ...)
-  local args = {...}
+  local args = tuple.pack(...)
   return function(...)
-    list.extend(args, {...})
+    list.extend(args, tuple.pack(...))
     return f(unpack(args))
   end
 end
 
 function rpartial(f, ...)
-  local args = {...}
+  local args = tuple.pack(...)
   return function(...)
-    args = list.extend({...}, args)
+    list.extend(tuple.pack(...), args)
     return f(unpack(args))
   end
 end
 
-function sprintf(...)
-  local args = {...}
+function sprintf(fmt, ...)
+  local args = tuple.pack(...)
+
   for i=1, #args do
     local x = args[i]
     local _type = type(x)
@@ -52,11 +54,15 @@ function sprintf(...)
       args[i] = vim.inspect(args[i])
     end
   end
-  return apply(string.format, args)
+
+  return apply(string.format, list.extend({fmt}, args))
 end
 
-function printf(...)
-  print(sprintf(...))
+function printf(fmt, ...)
+  local args = tuple.pack(...)
+  list.unpush(args, fmt)
+  local s = apply(sprintf, args)
+  print(s)
 end
 
 function ifnonnil(obj, if_nonnil, if_nil)
@@ -76,14 +82,17 @@ end
 
 function thread(obj, ...)
   local res = obj
-  local map = {...}
-  for i=1, #map do
-    if i ~= 1 then
-      res = {map[i](unpack(res))}
-    else
-      res = {map[i](obj)}
-    end
+  local map = tuple.pack(...)
+
+  if #map == 0 then
+    return res
   end
+
+  res = {map[1](res)}
+  for i=2, #map do
+    res = {map[i](unpack(res))}
+  end
+
   return unpack(res)
 end
 
@@ -91,14 +100,25 @@ function identity(...)
   return ...
 end
 
+function pprint(fmt, ...)
+  local args = tuple.pack(...)
+  printf(fmt or '%s', unpack(args))
+end
+
 function pp(...)
-  printf('%s', ...)
+  local args = tuple.pack(...)
+  if #args == 0 then
+    return
+  else
+    printf('%s', args)
+  end
 end
 
 function paste0(...)
-  local args = {...}
+  local args = tuple.pack(...)
   for i=1, #args do args[i] = tostring(args[i]) end
   return table.concat(args, '')
 end
 
 inspect = vim.inspect
+dump = inspect

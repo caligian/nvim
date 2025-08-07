@@ -1,4 +1,4 @@
-local dict = require('lib.dict')
+local dict = user_config.dict
 
 return {
   {

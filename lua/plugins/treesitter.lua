@@ -9,7 +9,7 @@ return {
         ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", 'python', 'r' },
         sync_install = false,
         auto_install = true,
-        ignore_install = { "javascript" },
+        ignore_install = { "javascript", 'tex', 'latex' },
         highlight = {
           enable = true,
         },

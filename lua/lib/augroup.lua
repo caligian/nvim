@@ -1,6 +1,7 @@
-local types = require 'lib.type'
-local class = require 'lib.class'
-local validate = require 'lib.validate'
+local utils = require 'lib.lua-utils'
+local types = utils.types
+local class = utils.class
+local validate = utils.validate
 local autocmd = require 'lib.autocmd'
 
 --- Create autocommand group

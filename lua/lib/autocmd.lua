@@ -1,8 +1,9 @@
-local dict = require 'lib.dict'
-local list = require 'lib.list'
-local validate = require 'lib.validate'
-local types = require 'lib.type'
-local class = require 'lib.class'
+local utils = require 'lib.lua-utils'
+local dict = utils.dict
+local list = utils.list
+local validate = utils.validate
+local types = utils.types
+local class = utils.class
 
 --- @class autocmd
 local autocmd = class 'autocmd'

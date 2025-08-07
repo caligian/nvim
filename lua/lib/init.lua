@@ -1,5 +1,5 @@
-user_config.buffer_groups = {}
 user_config.buffers = {}
+user_config.buffer_groups = {}
 user_config.filetypes = user_config.filetypes or {}
 user_config.terminals = user_config.terminals or {}
 user_config.repls = user_config.repls or { repls = {}, shells = {}, shell = false }
@@ -14,18 +14,12 @@ user_config.workspaces = user_config.workspaces or {}
 user_config.shell_command = user_config.shell_command or 'bash'
 user_config.telescope = {
   theme = 'ivy',
-  opts = {
-    disable_devicons = true,
-    previewer = false,
-    layout_config = {height = 13}
-  }
+  disable_devicons = true,
+  previewer = false,
+  layout_config = {height = 10}
 }
 
-local str = require('lib.string')
-local list = require('lib.list')
-local dict = require('lib.dict')
-local class = require('lib.class')
-local types = require('lib.type')
+local lutils = require 'lib.lua-utils'
 local augroup = require('lib.augroup')
 local window = require('lib.window')
 local buffer = require('lib.buffer')
@@ -38,13 +32,19 @@ local buffer_group = require('lib.buffer_group')
 local picker = require('lib.picker')
 local autocmd = require 'lib.autocmd'
 
-user_config.class = class
+-- Lua lib
+user_config.tuple = lutils.tuple
+user_config.class = lutils.class
+user_config.str = lutils.string
+user_config.list = lutils.list
+user_config.dict = lutils.dict
+user_config.types = lutils.types
+user_config.validate = lutils.validate
+user_config.copy = lutils.copy
+
+--- Nvim lib
 user_config.buffer_group = buffer_group
 user_config.terminal = terminal
-user_config.str = str
-user_config.list = list
-user_config.dict = dict
-user_config.types = types
 user_config.augroup = augroup
 user_config.window = window
 user_config.buffer = buffer
@@ -103,7 +103,7 @@ function user_config:set_buffer_groups()
     end
   end)
 
-  for name, config in pairs(self.filetypes) do
+  for name, _ in pairs(self.filetypes) do
     local group = buffer_group(name, function (bufnr)
       return buffer.filetype(bufnr) == name
     end)
@@ -130,7 +130,7 @@ end
 function user_config:root_dir(bufnr)
   local bufname = buffer.name(bufnr)
   local ft = buffer.filetype(bufnr)
-  local opts = dict.get(self.filetypes, {ft, 'root'}) or {}
+  local opts = user_config.dict.get(self.filetypes, {ft, 'root'}) or {}
 
   if not bufname:match('[a-zA-Z0-9]') then
     return false
@@ -139,8 +139,8 @@ function user_config:root_dir(bufnr)
   end
 
   return buffer.workspace(bufnr, {
-    pattern = dict.get(opts, {'root', 'pattern'}) or {'.git'},
-    check_depth = dict.get(opts, {'root', 'check_depth'}) or 4,
+    pattern = user_config.dict.get(opts, {'root', 'pattern'}) or {'.git'},
+    check_depth = user_config.dict.get(opts, {'root', 'check_depth'}) or 4,
   })
 end
 

@@ -1,11 +1,12 @@
-local types = require('lib.type')
-local dict = require('lib.dict')
+local utils = require 'lib.lua-utils'
+local types = utils.types
+local dict = utils.dict
+local validate = utils.validate
+local str = utils.string
+local class = utils.class
 local augroup = require('lib.augroup')
 local buffer = require('lib.buffer')
-local validate = require('lib.validate')
-local str = require('lib.string')
 local nvim = require('lib.nvim')
-local class = require('lib.class')
 local buffer_group = require 'lib.buffer_group'
 
 --- Valid options
