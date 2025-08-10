@@ -1,10 +1,10 @@
-local utils = require 'lib.lua-utils'
+local utils = require 'lua-utils'
 local class = utils.class
 local types = utils.types
 local dict = utils.dict
 local validate = utils.validate
-local buffer = require 'lib.buffer'
-local terminal = require('lib.terminal')
+local buffer = require 'nvim-utils.buffer'
+local terminal = require('nvim-utils.terminal')
 local repl = class('repl', terminal)
 
 -- opts = {

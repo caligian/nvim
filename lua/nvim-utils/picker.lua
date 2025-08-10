@@ -1,4 +1,4 @@
-local utils = require 'lib.lua-utils'
+local utils = require 'lua-utils'
 local types = utils.types
 local validate = utils.validate
 local class = utils.class

@@ -1,5 +1,5 @@
 local tabpage = {}
-local list = require('lib.lua-utils.list')
+local list = require('lua-utils.list')
 
 tabpage.get_number = vim.api.nvim_tabpage_get_number
 tabpage.is_valid = vim.api.nvim_tabpage_is_valid
@@ -22,7 +22,7 @@ end
 
 function tabpage.buffer_picker(tabnr)
   tabnr = tabnr or tabpage.current()
-  local picker = require('lib.picker')
+  local picker = require('picker')
   local p = picker('Tab buffers')
   local buffers = tabpage.list_buffers(tabnr)
   local choices = {}

@@ -1,12 +1,12 @@
-local utils = require 'lib.lua-utils'
+local utils = require 'lua-utils'
 local types = utils.types
 local list = utils.list
 local dict = utils.dict
 local class = utils.class
-local nvim = require('lib.nvim')
-local buffer = require('lib.buffer')
-local augroup = require('lib.augroup')
-local picker = require('lib.picker')
+local nvim = require('nvim-utils.nvim')
+local buffer = require('nvim-utils.buffer')
+local augroup = require('nvim-utils.augroup')
+local picker = require('nvim-utils.picker')
 
 --- @diagnostic disable: missing-fields
 

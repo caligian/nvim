@@ -1,4 +1,4 @@
-local copy = require 'lib.lua-utils.copy'
+local copy = require 'lua-utils.copy'
 local list = {}
 
 list.concat = table.concat
@@ -605,6 +605,10 @@ function list.copy(x, deep)
   else
     return copy.copy(x, {})
   end
+end
+
+function list.deep_copy(x)
+  return copy.deep(x)
 end
 
 return list

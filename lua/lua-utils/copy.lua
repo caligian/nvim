@@ -29,10 +29,6 @@ function copy.deep(x, res)
   local cache = {}
   cache[x] = true
 
-  if mt then
-    setmetatable(res, mt)
-  end
-
   for key, value in pairs(x) do
     if type(value) == 'table' then
       if cache[value] then
@@ -45,6 +41,10 @@ function copy.deep(x, res)
     else
       res[key] = value
     end
+  end
+
+  if mt then
+    setmetatable(res, mt)
   end
 
   return res

@@ -1,4 +1,4 @@
-local copy = require('lib.lua-utils.copy')
+local copy = require('lua-utils.copy')
 local dict = {}
 
 function dict.keys(x)

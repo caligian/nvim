@@ -1,7 +1,7 @@
-local buffer = require('lib.buffer')
-local types = require('lib.lua-utils.type')
-local class = require('lib.lua-utils.class')
-local nvim = require('lib.nvim')
+local buffer = require('nvim-utils.buffer')
+local types = require('lua-utils.types')
+local class = require('lua-utils.class')
+local nvim = require('nvim-utils.nvim')
 local terminal = class 'terminal'
 
 function terminal:initialize(cmd, cwd)

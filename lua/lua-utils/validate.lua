@@ -1,4 +1,4 @@
-local types = require('lib.lua-utils.type')
+local types = require('lua-utils.types')
 local validate = {}
 setmetatable(validate, validate)
 

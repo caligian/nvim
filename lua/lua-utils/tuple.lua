@@ -10,7 +10,7 @@ function tuple.pack(...)
 
   for i = 1, select("#", ...) do
     if args[i] == nil then
-      args[i] = 'NIL'
+      args[i] = false
     end
   end
 

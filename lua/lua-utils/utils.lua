@@ -1,5 +1,16 @@
-local tuple = require('lib.lua-utils.tuple')
-local list = require('lib.lua-utils.list')
+inspect = require 'lua-utils.inspect'
+local tuple = require('lua-utils.tuple')
+local list = require('lua-utils.list')
+
+function dump(x)
+  if type(x) == 'string' then
+    return x
+  elseif type(x) == 'number' then
+    return tostring(x)
+  else
+    return inspect(x)
+  end
+end
 
 function ifelse(cond, when_true, when_false)
   if cond then
@@ -51,7 +62,7 @@ function sprintf(fmt, ...)
     local x = args[i]
     local _type = type(x)
     if _type ~= "string" and type(_type) ~= "number" then
-      args[i] = vim.inspect(args[i])
+      args[i] = dump(args[i])
     end
   end
 
@@ -120,5 +131,41 @@ function paste0(...)
   return table.concat(args, '')
 end
 
-inspect = vim.inspect
-dump = inspect
+function paste(collapse, ...)
+  collapse = collapse or ' '
+  local args = tuple.pack(...)
+  local s = {}
+  local ind = 0
+
+  for i=1, #args do
+    if type(args[i]) == 'table' then
+      for j=1, #args[i] do
+        s[ind+1] = dump(args[i][j])
+        ind = ind + 1
+      end
+    elseif type(args[i]) == 'string' then
+      s[ind+1] = dump(args[i])
+      ind = ind + 1
+    end
+  end
+
+  return table.concat(s, collapse)
+end
+
+function callable(x)
+  local type_ = type(x)
+  if type_ == 'function' then
+    return true
+  elseif type_ ~= 'table' then
+    return false, sprintf('expected table with __call metatamethod, got ', x)
+  end
+
+  local mt = getmetatable(x)
+  if not mt then
+    return false, sprintf('expected table with metatable, got ', x)
+  elseif mt.__call then
+    return callable(mt.__call)
+  else
+    return false, sprintf('expected table with metamethod __call, got ', mt)
+  end
+end

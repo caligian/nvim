@@ -1,8 +1,8 @@
-local utils = require 'lib.lua-utils'
+local utils = require 'lua-utils'
 local types = utils.types
 local class = utils.class
 local validate = utils.validate
-local autocmd = require 'lib.autocmd'
+local autocmd = require 'nvim-utils.autocmd'
 
 --- Create autocommand group
 --- @class augroup

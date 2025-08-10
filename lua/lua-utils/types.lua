@@ -1,6 +1,10 @@
-require 'lib.lua-utils.utils'
-local list = require('lib.lua-utils.list')
+require 'lua-utils.utils'
+local list = require('lua-utils.list')
+local class = require('lua-utils.class')
 local types = {}
+types.object = class.is_object
+types.instance = class.is_instance
+types.class = class.is_class
 
 function types.userdata(x)
   if x == nil then
@@ -276,7 +280,7 @@ function types.is(child, parent)
     if not ok then
       return false, msg
     else
-      return child:inherits(parent)
+      return class.isa(child, parent)
     end
   elseif types.table(parent) then
     local ok, msg = types.table(child)
@@ -336,39 +340,17 @@ function types.assert:__index(name)
 end
 
 function types.inherits(child, parent)
-  if child == nil and parent == nil then
-    return true
-  elseif child == nil then
-    return false, 'child: expected object, got nothing'
-  elseif parent == nil then
-    return false, 'parent: expected object, got nothing'
-  end
-
   local ok, msg = types.object(child)
-  if not ok then return false, 'child: ' .. msg end
+  if not ok then
+    return false, ('child: ' .. msg)
+  end
 
   ok, msg = types.object(parent)
-  if not ok then return false, 'parent: ' .. msg end
-
-  if child == parent then
-    return true
-  elseif child.__inherits ~= nil and child.__inherits == parent then
-    return true
+  if not ok then
+    return false, ('parent: ' .. msg)
   end
 
-  if child.__instance then child = child.__class end
-  if parent.__instance then parent = parent.__class end
-  local inherits = child.__inherits
-
-  while true do
-    if inherits == nil then
-      return false, sprintf('expected object %s, got %s', parent.__name, child)
-    elseif inherits == parent then
-      return true
-    else
-      inherits = inherits.__inherits
-    end
-  end
+  return class.isa(child, parent)
 end
 
 function types.optional(cond)

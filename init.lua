@@ -1,3 +1,4 @@
-user_config = user_config or {}
-user_config = require('lib')
+require 'lua-utils'
+require 'nvim-utils'
+
 user_config:setup()
