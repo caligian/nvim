@@ -13,6 +13,7 @@ return {
       {'<leader>e', group = 'Lua eval'},
       {'<leader>r', group = 'Project REPL'},
       {'<leader>x', group = 'Shell'},
+      {'<leader>q', group = 'Session'},
       {'<leader><enter>', group = 'Project shell'},
       {'<leader>q', group = 'Quit vim'}
     }

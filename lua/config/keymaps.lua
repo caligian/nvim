@@ -294,3 +294,8 @@ kset("n", "<space>dk", hide_diagnostics, {desc = 'hide diagnostics'})
 kset("n", "<space>de", show_diagnostics, {desc = 'show diagnostics'})
 kset('n', '<space>dd', '<cmd>Trouble diagnostics toggle filter.buf=0<CR>', {desc = 'Buffer diagnostics'})
 kset('n', '<space>dD', '<cmd>Trouble diagnostics toggle<CR>', {desc = 'Workspace diagnostics'})
+
+kset("n", "<leader>qs", function() require("persistence").load() end, {desc = 'Load'})
+kset("n", "<leader>qS", function() require("persistence").select() end, {desc = 'Select'})
+kset("n", "<leader>ql", function() require("persistence").load({ last = true }) end, {desc = 'Load previous'})
+kset("n", "<leader>qd", function() require("persistence").stop() end, {desc = 'Stop'})

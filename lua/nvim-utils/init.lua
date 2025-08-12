@@ -17,7 +17,7 @@ user_config.telescope = {
   theme = 'ivy',
   disable_devicons = true,
   previewer = false,
-  layout_config = {height = 10}
+  layout_config = {height = 13}
 }
 
 for key, value in pairs(require('lua-utils')) do

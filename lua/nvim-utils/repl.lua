@@ -119,7 +119,7 @@ function repl.create(bufnr, shell)
 
   local ft = buffer.filetype(bufnr)
   local opts = dict.get(user_config.filetypes, {ft, 'repl'})
-  opts = opts or user_config.filetypes.shell.repl
+  opts = opts or dict.get(user_config.filetypes, {'shell', 'repl'})
 
   if not opts then
     return false

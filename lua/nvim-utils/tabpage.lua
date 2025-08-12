@@ -22,7 +22,7 @@ end
 
 function tabpage.buffer_picker(tabnr)
   tabnr = tabnr or tabpage.current()
-  local picker = require('picker')
+  local picker = require('nvim-utils.picker')
   local p = picker('Tab buffers')
   local buffers = tabpage.list_buffers(tabnr)
   local choices = {}

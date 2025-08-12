@@ -210,7 +210,7 @@ function class.create_instance(cls, defaults, ...)
   obj.__newindex = class.set
   obj.__object = true
   obj.__name = cls.__name
-  obj.__inherits = cls.__inherclits
+  obj.__inherits = cls.__inherits
   obj.__instance = true
   obj.__class = cls
   obj.__index = cls

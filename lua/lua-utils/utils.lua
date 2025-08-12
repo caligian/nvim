@@ -8,7 +8,7 @@ function dump(x)
   elseif type(x) == 'number' then
     return tostring(x)
   else
-    return inspect(x)
+    return inspect(x, {indent = ' '})
   end
 end
 
@@ -162,10 +162,19 @@ function callable(x)
 
   local mt = getmetatable(x)
   if not mt then
-    return false, sprintf('expected table with metatable, got ', x)
+    return false, sprintf('expected table with metatable, got %s', x)
   elseif mt.__call then
     return callable(mt.__call)
   else
     return false, sprintf('expected table with metamethod __call, got ', mt)
   end
+end
+
+function hasmetatable(x)
+  if type(x) ~= 'table' then
+    return false
+  end
+
+  local mt = getmetatable
+  return mt ~= nil
 end
