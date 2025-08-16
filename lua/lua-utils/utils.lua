@@ -77,13 +77,18 @@ function printf(fmt, ...)
 end
 
 function ifnonnil(obj, if_nonnil, if_nil)
-  return ifnil(obj, if_nil, if_nonnil)
+  if obj ~= nil then
+    return if_nonnil
+  else
+    return if_nil
+  end
 end
 
 function ifnil(obj, if_nil, if_nonnil)
   if if_nonnil == nil then
     if_nonnil = obj
   end
+
   if obj == nil then
     return if_nil
   else

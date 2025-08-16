@@ -2,12 +2,11 @@ local utils = require 'lua-utils'
 local types = utils.types
 local dict = utils.dict
 local validate = utils.validate
-local str = utils.string
 local class = utils.class
 local augroup = require('nvim-utils.augroup')
 local buffer = require('nvim-utils.buffer')
-local nvim = require('nvim-utils.nvim')
 local buffer_group = require 'nvim-utils.buffer_group'
+local keymap = require 'nvim-utils.keymap'
 
 --- Valid options
 -- {
@@ -74,6 +73,10 @@ function filetype:initialize(opts)
       opt_vars = types.dict,
       opt_opts = types.dict
     },
+    opt_root = {
+      opt_pattern = types.list,
+      opt_check_depth = types.number
+    },
     opt_lsp = types.table,
     opt_repl = {
       command = types.string,
@@ -93,7 +96,7 @@ function filetype:initialize(opts)
   end
 
   self.require_path = 'config.filetypes.' .. self.name
-  self.augroup = augroup('user_config.' .. self.name)
+  self.augroup = augroup('user_config.filetype.' .. self.name)
   self.loaded = false
   user_config.filetypes[self.name] = self
 
@@ -176,26 +179,29 @@ end
 function filetype:add_autocmd(callback, opts)
   opts = opts or {}
   validate.opts(opts, 'table')
+
   opts = vim.deepcopy(opts)
   opts.pattern = self.name
+
   self.augroup:add_autocmd('FileType', self.name, callback, opts)
 end
 
-function filetype:add_keymap(name, mode, lhs, rhs, opts)
-  opts = opts or {}
+function filetype:add_keymap(mode, lhs, rhs, opts)
+  opts = vim.deepcopy(opts or {})
   validate.opts(opts, 'table')
-  opts = vim.deepcopy(opts)
-  opts.name = 'keymap.' .. name
-  self:add_autocmd(function ()
-    opts.buffer = buffer.current()
-    vim.keymap.set(mode, lhs, rhs, opts)
-  end, opts)
+
+  opts.filetype = self.name
+  opts.group = self.augroup.name
+
+  return keymap.set(mode, lhs, rhs, opts)
 end
 
 function filetype:add_keymaps(specs)
   for name, spec in pairs(specs) do
     local mode, lhs, rhs, opts = unpack(spec)
-    self:add_keymap(name, mode, lhs, rhs, opts)
+    opts = vim.deepcopy(opts)
+    opts.name = name
+    self:add_keymap(mode, lhs, rhs, opts)
   end
 end
 
@@ -212,18 +218,18 @@ end
 function filetype:root_dir(bufnr)
   local bufname = buffer.name(bufnr)
   local ft = buffer.filetype(bufnr)
-  local repl_opts = dict.get(self, {'root', 'pattern'})
+  local root_opts = self.root or {
+    pattern = {'.git'},
+    check_depth = 4
+  }
 
-  if not bufname:match('[a-zA-Z0-9]') or not ft:match('[a-zA-Z0-9]') then
+  if not ft:match('[a-zA-Z0-9]') then
     return false
-  elseif not repl_opts then
+  elseif not bufname:match('[a-zA-Z0-9]') then
     return false
   end
 
-  return buffer.workspace(bufnr, {
-    pattern = dict.get(repl_opts, {'root', 'pattern'}) or {'.git'},
-    check_depth = dict.get(repl_opts, {'root', 'check_depth'}) or 4,
-  })
+  return buffer.workspace(bufnr, root_opts)
 end
 
 function filetype:setup()
@@ -243,6 +249,12 @@ if not user_config.filetypes.shell then
     root = {pattern = {'.git'}, check_depth = 4},
     repl = {command = user_config.shell_command or 'bash'}
   }
+end
+
+function filetype.buf_get(buf)
+  buf = buf or vim.fn.bufnr()
+  local ft = buffer.filetype(buf)
+  return user_config.filetypes[ft]
 end
 
 return filetype

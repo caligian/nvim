@@ -1,4 +1,5 @@
 local copy = {}
+setmetatable(copy, copy)
 
 --- Shallow copy table
 --- @param x table src table
@@ -48,6 +49,14 @@ function copy.deep(x, res)
   end
 
   return res
+end
+
+function copy:__call(x, deep)
+  if deep then
+    return copy.deep(x)
+  else
+    return copy.copy(x)
+  end
 end
 
 return copy

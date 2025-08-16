@@ -1,4 +1,5 @@
 user_config = {}
+user_config.keymaps = {}
 user_config.buffers = {}
 user_config.buffer_groups = {}
 user_config.filetypes = user_config.filetypes or {}
@@ -35,8 +36,10 @@ local terminal = require('nvim-utils.terminal')
 local buffer_group = require('nvim-utils.buffer_group')
 local picker = require('nvim-utils.picker')
 local autocmd = require 'nvim-utils.autocmd'
+local keymap = require 'nvim-utils.keymap'
 
 --- Nvim lib
+user_config.keymap = keymap
 user_config.buffer_group = buffer_group
 user_config.terminal = terminal
 user_config.augroup = augroup

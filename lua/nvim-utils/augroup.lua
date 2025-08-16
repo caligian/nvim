@@ -59,19 +59,17 @@ function augroup:add_autocmd(event, pattern, callback, opts)
   opts = vim.deepcopy(opts)
   opts.group = self.id
 
-  if self.id then
-    if opts.name then
-      opts.name = self.name .. '.' .. opts.name
-    end
-
-    opts.group = self.id
-    local au = autocmd(event, pattern, callback, opts)
-
-    if au.name then self.autocmds[au.name] = au end
-    self.autocmds[#self.autocmds+1] = au
-
-    return au
+  if self.name and opts.name then
+    opts.name = self.name .. '.' .. opts.name
   end
+
+  opts.group = self.id
+  local au = autocmd(event, pattern, callback, opts)
+
+  if au.name then self.autocmds[au.name] = au end
+  self.autocmds[#self.autocmds+1] = au
+
+  return au
 end
 
 function augroup:add_autocmds(specs)

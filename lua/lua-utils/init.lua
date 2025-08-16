@@ -9,7 +9,8 @@ local M = {
 	tuple = require 'lua-utils.tuple',
 	types = require 'lua-utils.types',
 	copy = require 'lua-utils.copy',
-	validate = require 'lua-utils.validate'
+	validate = require 'lua-utils.validate',
+  cmp = require 'lua-utils.cmp'
 }
 
 function M:import()
@@ -22,6 +23,7 @@ function M:import()
   types = require 'lua-utils.types'
   copy = require 'lua-utils.copy'
   validate = require 'lua-utils.validate'
+  cmp = require 'lua-utils.cmp'
 end
 
 return M
