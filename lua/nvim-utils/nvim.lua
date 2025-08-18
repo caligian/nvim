@@ -138,4 +138,20 @@ function nvim.require(require_path, callback)
   end
 end
 
+function nvim.input(prompt, on_input, on_nothing)
+  vim.ui.input({prompt = prompt}, function (input)
+    if not input then
+      return false
+    elseif #input > 0 then
+      on_input(input)
+    elseif on_nothing then
+      on_nothing()
+    end
+  end)
+end
+
+function nvim.select(choices, prompt, on_choice, formatter)
+  vim.ui.select(choices, {prompt = prompt, format_item = formatter}, on_choice)
+end
+
 return nvim

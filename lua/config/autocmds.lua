@@ -8,3 +8,11 @@ add('FileType',  'qf', function ()
     desc = 'Hide window', buffer = buffer.current()
   })
 end)
+
+add("BufWinLeave", '*.*', function()
+  vim.cmd.mkview()
+end)
+
+add("BufWinEnter", '*.*', function()
+  vim.cmd.loadview({ mods = { emsg_silent = true } })
+end)

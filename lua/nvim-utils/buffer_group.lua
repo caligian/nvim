@@ -162,7 +162,7 @@ function buffer_group:delete(bufnr, force)
     table.remove(self.buffers, ind)
     self.cache.buffers[exists[1]] = nil
     self.cache.buffers[exists[2]] = nil
-    pcall(buffer.delete, exists[1])
+    pcall(buffer.delete, exists[1], force)
 
     dict.set(user_config.buffers, {exists[1], 'buffer_groups', self.name}, false, true)
     dict.set(user_config.buffers, {exists[2], 'buffer_groups', self.name}, false, true)
@@ -206,8 +206,9 @@ function buffer_group:restore(bufnr)
 end
 
 function buffer_group:picker(restore)
-  local title = paste0('Buffer group: ', self.name)
-  title = ifelse(restore, paste0(title, ' (restore)'), title)
+  local name = self.name:gsub(os.getenv('HOME'), '~')
+  local title = sprintf('Buffer group (%s)', name)
+  title = ifelse(restore, sprintf('Buffer group [restore] (%s)', name), title)
   local p = picker(title)
   local mod = p.actions
 
@@ -257,9 +258,10 @@ function buffer_group:picker(restore)
     return
   end
 
+  local home = os.getenv('HOME')
   local function entry_maker(entry)
     return {
-      display = entry[2],
+      display = entry[2]:gsub(home, '~'),
       value = entry[1],
       ordinal = entry[2],
     }

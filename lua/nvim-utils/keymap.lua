@@ -22,7 +22,7 @@ function keymap.opts(opts)
   if opts.event or opts.pattern then
     au_opts[1] = opts.event or 'BufRead'
     au_opts[2] = { pattern = opts.pattern or '*' }
-    if name then au_opts[2].desc = 'user_config.keymap.' .. name end
+    if name then au_opts[2].desc = name end
   elseif opts.filetype or opts.ft then
     local ft = opts.filetype or opts.ft
     validate.filetype(ft, types.string)
@@ -31,13 +31,12 @@ function keymap.opts(opts)
     au_opts[2] = {pattern = ft}
 
     if name then
-      au_opts[4].desc = sprintf('user_config.filetype.%s.keymap.%s', ft, name)
+      au_opts[4].desc = sprintf('filetype.%s.%s', ft, name)
     end
   end
 
-  if name then
-    name = sprintf('user_config.keymap.%s', name)
-    if not opts.desc then kbd_opts.desc = name end
+  if name and not opts.desc then
+    kbd_opts.desc = name
   end
 
   for key, value in pairs(opts) do
