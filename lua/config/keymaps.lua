@@ -40,43 +40,6 @@ local function show_diagnostics()
   }
 end
 
-local function get_project()
-  local buf = buffer.current()
-  local ft = filetype.buf_get(buf)
-  local proj
-
-  if not ft then
-    proj = buffer.workspace(buf)
-  else
-    proj = ft:root_dir(buf)
-  end
-
-  if not proj then
-    return false
-  end
-
-  return proj
-end
-
-local function grep_project(live)
-  return function ()
-    local proj = get_project()
-    if not proj then
-      return false
-    end
-
-    local proj_display = proj:gsub(os.getenv('HOME'), '~')
-    local picker_name = ifelse(live, 'live_grep', 'grep_string')
-    local prompt_title = ifelse(live, 'Live grep project (%s)', 'Grep project (%s)')
-    local picker = tbuiltin(picker_name, {
-      search_dirs = {proj},
-      prompt_title = prompt_title:format(proj_display)
-    })
-
-    picker()
-  end
-end
-
 local function get_repl(shell, running, callback)
   return function ()
     local bufnr = vim.fn.bufnr()
@@ -118,6 +81,43 @@ local function shell_call(method, running)
         return term[method](term)
       end
     end
+  end
+end
+
+local function get_project()
+  local buf = buffer.current()
+  local ft = filetype.buf_get(buf)
+  local proj
+
+  if not ft then
+    proj = buffer.workspace(buf)
+  else
+    proj = ft:root_dir(buf)
+  end
+
+  if not proj then
+    return false
+  end
+
+  return proj
+end
+
+local function grep_project(live)
+  return function ()
+    local proj = get_project()
+    if not proj then
+      return false
+    end
+
+    local proj_display = proj:gsub(os.getenv('HOME'), '~')
+    local picker_name = ifelse(live, 'live_grep', 'grep_string')
+    local prompt_title = ifelse(live, 'Live grep project (%s)', 'Grep project (%s)')
+    local picker = tbuiltin(picker_name, {
+      search_dirs = {proj},
+      prompt_title = prompt_title:format(proj_display)
+    })
+
+    picker()
   end
 end
 
@@ -374,14 +374,14 @@ end, {desc = 'Show buffer groups'})
 --- Git stuff
 define['git.git']('n', '<space>gg', ':Git<CR>', {desc = "Git"})
 define['git.stage']('n', '<space>gs', ':Git stage %<CR>', {desc = "Stage buffer"})
-define['git.add']('n', '<space>gs', ':Git add %<CR>', {desc = "Add buffer"})
+define['git.add']('n', '<space>ga', ':Git add %<CR>', {desc = "Add buffer"})
 define['git.commit']('n', '<space>gc', ':Git commit<CR>', {desc = "Commit"})
 define['git.log']('n', '<space>gl', ':Git log<CR>', {desc = "Log"})
 define['git.push']('n', '<space>gp', ':Git push<CR>', {desc = "Push to remote"})
 define['git.files']('n', '<space>gf', tbuiltin('git_files'), {desc = "Push to remote"})
 define['git.branches']('n', '<space>gb', tbuiltin('git_branches'), {desc = 'Branches'})
 define['git.status']('n', '<space>gs', tbuiltin('git_status'), {desc = 'Status'})
-define['git.commits']('n', '<space>gc', tbuiltin('git_commits'), {desc = 'Commits'})
+define['git.commits']('n', '<space>g?', tbuiltin('git_commits'), {desc = 'Commits'})
 
 --- Diagnostic stuff
 define['diagnostics.hide']("n", "<space>dk", hide_diagnostics, {desc = 'hide diagnostics'})
