@@ -29,6 +29,7 @@ return {
             'thread', 'identity',
           },
           disable = {
+            'cast-local-type',
             'missing-fields',
             'lowercase-global',
             'unused-vararg',
@@ -36,6 +37,7 @@ return {
             'assign-type-match',
             'param-type-mismatch',
             'inject-field',
+            'redundant-parameter',
           }
         },
         workspace = {

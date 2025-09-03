@@ -4,6 +4,7 @@ local buffer = user_config.buffer
 local filetype = user_config.filetype
 local keymap = user_config.keymap
 local nvim = user_config.nvim
+local recent_buffers = user_config.buffers.recent
 local define = keymap.define
 
 local function topts(opts)
@@ -319,6 +320,7 @@ define['file.source']('n', '<space>fv', ':w! <bar> source %<CR>', {desc = 'Sourc
 define['file.browser']('n', '<space>ff', function ()
   require("telescope").extensions.file_browser.file_browser(topts {depth = 3})
 end, {desc = 'File browser'})
+define['file.netrw']('n', '<space>fd', ':exec ":e " . getcwd()<CR>', {desc = 'Netrw cwd'})
 
 
 -- Tabs
@@ -346,6 +348,19 @@ define['buffer.hide']('n', '<space>bk', '<cmd>hide<CR>', {desc = 'Hide buffer'})
 define['buffer.wipeout']('n', '<space>bq', '<cmd>bwipeout! %<CR>', {desc = 'Wipeout buffer'})
 define['buffer.tab_buffers']('n', '<space>bt', function () user_config.tabpage.buffer_picker() end, {desc = 'Select buffer in tab'})
 define['buffer.buffer_groups']('n', '<space>bg', function () user_config.buffer_group.buffer_picker(vim.fn.bufnr()) end, {desc = 'Show buffer groups for buffer'})
+define['buffer.pop'](
+  'n', '<leader>bl', function ()
+    if #recent_buffers < 2 then
+      return
+    else
+      local other = table.remove(recent_buffers, #recent_buffers-1)
+      recent_buffers[other] = nil
+      if other ~= buffer.name(buffer.current()) then
+        vim.cmd(':b ' .. other)
+      end
+    end
+  end, {desc = 'Recent buffer'}
+)
 
 -- LSP stuff
 define['lsp.code_action']('n', '<space>la', function () vim.lsp.buf.code_action() end, {desc = 'Code actions'})
@@ -380,7 +395,7 @@ define['git.log']('n', '<space>gl', ':Git log<CR>', {desc = "Log"})
 define['git.push']('n', '<space>gp', ':Git push<CR>', {desc = "Push to remote"})
 define['git.files']('n', '<space>gf', tbuiltin('git_files'), {desc = "Push to remote"})
 define['git.branches']('n', '<space>gb', tbuiltin('git_branches'), {desc = 'Branches'})
-define['git.status']('n', '<space>gs', tbuiltin('git_status'), {desc = 'Status'})
+define['git.status']('n', '<space>gS', tbuiltin('git_status'), {desc = 'Status'})
 define['git.commits']('n', '<space>g?', tbuiltin('git_commits'), {desc = 'Commits'})
 
 --- Diagnostic stuff
@@ -454,6 +469,26 @@ define['project.ripgrep'](
   'n', '<leader>pr', project_ripgrep, {desc = 'Ripgrep'}
 )
 
-define['project.ripgrep_1'](
-  'n', '<leader>|', project_ripgrep, {desc = 'Ripgrep'}
+define['project.netrw'](
+  'n', '<leader>pd', function ()
+    local proj = get_project()
+    if proj then
+      vim.cmd(':e ' .. proj)
+    else
+      vim.cmd(':e ' .. vim.fn.getcwd())
+    end
+  end,
+  {desc = 'Netrw dir'}
+)
+
+define['toggle_bg'](
+  'n', '<leader>hb',
+  function ()
+    if vim.o.background == 'light'  then
+      vim.o.background = 'dark'
+    else
+      vim.o.background = 'light'
+    end
+  end,
+  {desc = 'Toggle light/dark bg'}
 )

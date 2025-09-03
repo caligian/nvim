@@ -6,3 +6,5 @@ vim.o.autoindent = true
 vim.o.autochdir = true
 vim.o.number = true
 vim.o.relativenumber = true
+vim.o.background = 'dark'
+vim.g.netrw_keepdir = 1

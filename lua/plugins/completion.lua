@@ -1,8 +1,11 @@
 return {
   {
-    'saghen/blink.cmp',
-    dependencies = { 'rafamadriz/friendly-snippets' },
-    version = '1.*',
+    "saghen/blink.cmp",
+    event = 'InsertEnter',
+    dependencies = {
+      "mikavilpas/blink-ripgrep.nvim",
+      "folke/snacks.nvim",
+    },
     opts = {
       keymap = {
         preset = 'default',
@@ -20,36 +23,16 @@ return {
         ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
         ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
         ['<C-space>'] = { 'show_signature', 'hide_signature', 'fallback' },
-      },
-      appearance = { nerd_font_variant = 'mono' },
-      completion = { documentation = { auto_show = true } },
-      sources = {
-        default = { 'lsp', 'path', 'snippets', 'buffer' },
-      },
-      fuzzy = { implementation = "prefer_rust_with_warning" },
-      signature = {enabled = true},
-    },
-    opts_extend = { "sources.default" }
-  },
-  {
-    "saghen/blink.cmp",
-    dependencies = {
-      "mikavilpas/blink-ripgrep.nvim",
-      "folke/snacks.nvim",
-    },
-    opts = {
-      keymap = {
-        ["<c-g>"] = {
+        ["<C-/>"] = {
           function()
             require("blink-cmp").show({ providers = { "ripgrep" } })
           end,
         },
       },
+      appearance = { nerd_font_variant = 'mono' },
+      completion = { documentation = { auto_show = true } },
       sources = {
-        default = {
-          "buffer",
-          "ripgrep",
-        },
+        default = { 'lsp', 'path', 'snippets', 'buffer' },
         providers = {
           ripgrep = {
             module = "blink-ripgrep",
@@ -58,15 +41,12 @@ return {
               prefix_min_len = 3,
               project_root_marker = ".git",
               fallback_to_regex_highlighting = true,
-              toggles = {
-                on_off = nil,
-                debug = nil,
-              },
+              toggles = { on_off = nil, debug = nil },
               backend = {
                 use = "ripgrep",
                 customize_icon_highlight = true,
                 ripgrep = {
-                  context_size = 5,
+                  context_size = 3,
                   max_filesize = "1M",
                   project_root_fallback = true,
                   search_casing = "--ignore-case",
@@ -78,8 +58,10 @@ return {
               debug = false,
             },
           },
-        },
+        }
       },
+      fuzzy = { implementation = "prefer_rust_with_warning" },
+      signature = {enabled = true},
     },
   }
 }
