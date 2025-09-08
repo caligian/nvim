@@ -492,3 +492,6 @@ define['toggle_bg'](
   end,
   {desc = 'Toggle light/dark bg'}
 )
+
+vim.keymap.set({"n", "v"}, 'j', 'gj')
+vim.keymap.set({'n', 'v'}, 'k', 'gk')

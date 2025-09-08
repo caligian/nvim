@@ -1,7 +1,6 @@
 return {
   {
     "ellisonleao/gruvbox.nvim",
-    priority = 1000 ,
     config = function ()
       require("gruvbox").setup({
         terminal_colors = true,
@@ -26,7 +25,6 @@ return {
   {
     'maxmx03/solarized.nvim',
     lazy = false,
-    priority = 1000,
     ---@class solarized.config
     opts = {},
     config = function(_, opts)
@@ -40,7 +38,18 @@ return {
     "rose-pine/neovim",
     name = "rose-pine",
     config = function()
+      vim.o.background = 'light'
       vim.cmd("colorscheme rose-pine")
+    end
+  },
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000,
+    config = function ()
+      vim.o.background = 'dark'
+      vim.o.cursorline = true
+      vim.cmd 'colorscheme catppuccin-mocha'
     end
   }
 }

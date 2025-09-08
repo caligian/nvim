@@ -29,20 +29,6 @@ return {
 
   },
   {
-    'RRethy/nvim-treesitter-textsubjects',
-    dependencies = { "nvim-treesitter/nvim-treesitter" },
-    config = function ()
-      require('nvim-treesitter-textsubjects').configure({
-        prev_selection = ',',
-        keymaps = {
-          ['.'] = 'textsubjects-smart',
-          [';'] = 'textsubjects-container-outer',
-          ['i;'] = 'textsubjects-container-inner',
-        },
-      })
-    end
-  },
-  {
     'nvim-treesitter/nvim-treesitter-textobjects',
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     config = function ()
@@ -64,6 +50,7 @@ return {
             goto_next_end = {
               ["]M"] = "@function.outer",
               ["]["] = "@block.outer",
+              ["<A-e>"] = '@function.outer',
             },
             goto_previous_start = {
               ["[="] = "@assignment.lhs",
@@ -75,6 +62,7 @@ return {
             goto_previous_end = {
               ["[M"] = "@function.outer",
               ["[]"] = "@block.outer",
+              ["<A-a>"] = "@function.outer",
             },
             goto_next = {
               ["]d"] = "@conditional.outer",
