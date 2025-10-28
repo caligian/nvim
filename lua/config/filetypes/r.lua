@@ -12,8 +12,8 @@ return {
     'r_language_server'
   },
   autocmds = {
-    disable_ts_indent = function (_)
-      vim.cmd 'TSBufDisable indent'
+    indent = function ()
+      vim.b.r_indent_align_args = 1
     end,
     disable_diagnostics = function(_)
       vim.diagnostic.config {

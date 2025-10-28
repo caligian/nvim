@@ -20,9 +20,11 @@ return {
         ignore_install = { "javascript", 'tex', 'latex' },
         highlight = {
           enable = true,
+          disable = {}
         },
         indent = {
-          enable = false,
+          enable = true,
+          disable = {'python'},
         }
       }
     end
@@ -91,5 +93,5 @@ return {
         },
       }
     end
-  }
+  },
 }

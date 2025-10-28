@@ -1,6 +1,6 @@
 local cmd = vim.cmd
 local dict = require 'lua-utils.dict'
-local buffer = user_config.buffer
+local buffer = require 'nvim-utils.buffer'
 local filetype = user_config.filetype
 local keymap = user_config.keymap
 local nvim = user_config.nvim
@@ -373,6 +373,7 @@ define['lsp.restart']('n', '<space>lL', ':LspRestart<CR>', {desc = 'Restart LSP'
 define['lsp.document_symbols']('n', '<space>ls', tbuiltin('lsp_document_symbols'), {desc = 'Document symbols'})
 define['lsp.workspace_symbols']('n', '<space>lw', tbuiltin('lsp_workspace_symbols'), {desc = 'Workspace symbols'})
 define['lsp.log']('n', '<space>l?', ':LspLog<CR>', {desc = 'Workspace symbols'})
+define['lsp.buffer_format']('n', '<space>lf', ':lua vim.lsp.buf.format()<CR>', {desc = 'Format buffer'})
 
 --- Buffer groups
 define['buffer.buffer_groups']('n', '<space>>', function ()
@@ -495,3 +496,43 @@ define['toggle_bg'](
 
 vim.keymap.set({"n", "v"}, 'j', 'gj')
 vim.keymap.set({'n', 'v'}, 'k', 'gk')
+
+local scratch_buffer_path = user_config.data_dir .. '/scratch.lua'
+local function create_scratch_buffer()
+  local buf = vim.fn.bufexists(scratch_buffer_path)
+  if buf == 0 then
+    buf = vim.fn.bufadd(scratch_buffer_path)
+    vim.keymap.set('n', 'q', ':hide<CR>', {desc = 'Hide buffer', buffer = buf})
+    vim.cmd 'set ft=lua'
+  else
+    buf = vim.fn.bufnr(scratch_buffer_path)
+  end
+
+  return buf
+end
+
+define.open_scratch_buffer_below(
+  'n', '<leader>,',
+  function ()
+    local buf = create_scratch_buffer()
+    local winnr = vim.fn.bufwinnr(buf)
+
+    if winnr == -1 then
+      vim.cmd('split | wincmd j | b ' .. buf)
+    end
+  end,
+  {desc = 'Split scratch below'}
+)
+
+define.open_scratch_buffer_right(
+  'n', '<leader>;',
+  function ()
+    local buf = create_scratch_buffer()
+    local winnr = vim.fn.bufwinnr(buf)
+
+    if winnr == -1 then
+      vim.cmd('vsplit | wincmd l | b ' .. buf)
+    end
+  end,
+  {desc = 'Split scratch below'}
+)

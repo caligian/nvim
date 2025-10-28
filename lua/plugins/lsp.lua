@@ -1,4 +1,5 @@
-local dict = user_config.dict
+local dict = require 'lua-utils.dict'
+local list = require 'lua-utils.list'
 
 return {
   {
@@ -33,13 +34,18 @@ return {
 
       local capabilities = require('blink.cmp').get_lsp_capabilities()
       for _, ft in ipairs(fts) do
-        local server, config = ft:get_lsp_config()
-        config = vim.deepcopy(config)
-        config = dict.merge(config, {
-          capabilities = vim.deepcopy(capabilities)
-        })
-        vim.lsp.config(server, config)
-        vim.lsp.enable(server)
+        list.each(
+          ft:get_lsp_config(),
+          function (spec)
+            local server, config = unpack(spec)
+            config = vim.deepcopy(config)
+            config = dict.merge(config, {
+              capabilities = vim.deepcopy(capabilities)
+            })
+            vim.lsp.config(server, config)
+            vim.lsp.enable(server)
+          end
+        )
       end
     end
   },

@@ -2,6 +2,7 @@ return {
   {
     "saghen/blink.cmp",
     event = 'InsertEnter',
+    build = 'cargo build --release',
     dependencies = {
       "mikavilpas/blink-ripgrep.nvim",
       "folke/snacks.nvim",
@@ -14,10 +15,7 @@ return {
         ['<C-h>'] = { 'show', 'show_documentation', 'hide_documentation' },
         ['<C-e>'] = { 'hide', 'fallback' },
         ['<CR>'] = { 'accept', 'fallback' },
-        ['<Tab>'] = { 'snippet_forward', 'fallback' },
-        ['<S-Tab>'] = { 'snippet_backward', 'fallback' },
-        ['<Up>'] = { 'select_prev', 'fallback' },
-        ['<Down>'] = { 'select_next', 'fallback' },
+        ['<Tab>'] = { 'select_accept_and_enter', 'fallback' },
         ['<C-p>'] = { 'select_prev', 'fallback_to_mappings' },
         ['<C-n>'] = { 'select_next', 'fallback_to_mappings' },
         ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
@@ -60,7 +58,7 @@ return {
           },
         }
       },
-      fuzzy = { implementation = "prefer_rust_with_warning" },
+      fuzzy = { implementation = "lua" },
       signature = {enabled = true},
     },
   }

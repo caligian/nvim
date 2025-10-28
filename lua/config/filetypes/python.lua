@@ -1,7 +1,8 @@
 return {
   name = 'python',
   lsp = {
-    'jedi_language_server'
+    {'ruff'},
+    {'jedi_language_server'}
   },
   repl = {
     command = 'ipython3',
