@@ -1,0 +1,49 @@
+\documentclass[a4paper,11pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{longtable}
+\usepackage{amssymb}
+\usepackage{lscape}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{rotating}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{ulem}
+\usepackage[backend=biber,style=authoryear,sorting=nyt]{biblatex}
+\usepackage[left=1cm,right=1.5cm,top=1.5cm,bottom=1.5cm]{geometry}
+
+\addbibresource{REFERENCE_FILE}
+\renewcommand*{\arraystretch}{1.1}
+\hypersetup{colorlinks = true, urlcolor = blue, linkcolor = blue, citecolor = red}
+
+%% Start
+\begin{document}
+\setlength{\extrarowheight}{3pt}
+
+\begin{titlepage}
+    \begin{center}
+        \vspace*{8cm}
+        \Huge{TITLE} \\
+        \vspace{0.4cm}
+        \Large{SUBTITLE1} \\
+        \vspace*{0.4cm}
+        \large{SUBTITLE2} \\
+        \vspace*{0.4cm}
+        \small{AUTHOR} \\
+    \end{center}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Bibliography}{
+    \addbibliography
+}
+
+%% End
+\end{document}

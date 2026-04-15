@@ -1,0 +1,48 @@
+---@module "neominimap.config.meta"
+return {
+  -- "Isrothy/neominimap.nvim",
+  -- version = "v3.x.x",
+  -- lazy = false, -- NOTE: NO NEED to Lazy load
+  -- -- Optional. You can also set your own keybindings
+  -- keys = {
+  --   -- Global Minimap Controls
+  --   { "<localleader>nm", "<cmd>Neominimap Toggle<cr>", desc = "Toggle global minimap" },
+  --   { "<localleader>no", "<cmd>Neominimap Enable<cr>", desc = "Enable global minimap" },
+  --   { "<localleader>nc", "<cmd>Neominimap Disable<cr>", desc = "Disable global minimap" },
+  --   { "<localleader>nr", "<cmd>Neominimap Refresh<cr>", desc = "Refresh global minimap" },
+  --
+  --   -- Window-Specific Minimap Controls
+  --   { "<localleader>nwt", "<cmd>Neominimap WinToggle<cr>", desc = "Toggle minimap for current window" },
+  --   { "<localleader>nwr", "<cmd>Neominimap WinRefresh<cr>", desc = "Refresh minimap for current window" },
+  --   { "<localleader>nwo", "<cmd>Neominimap WinEnable<cr>", desc = "Enable minimap for current window" },
+  --   { "<localleader>nwc", "<cmd>Neominimap WinDisable<cr>", desc = "Disable minimap for current window" },
+  --
+  --   -- Tab-Specific Minimap Controls
+  --   { "<localleader>ntt", "<cmd>Neominimap TabToggle<cr>", desc = "Toggle minimap for current tab" },
+  --   { "<localleader>ntr", "<cmd>Neominimap TabRefresh<cr>", desc = "Refresh minimap for current tab" },
+  --   { "<localleader>nto", "<cmd>Neominimap TabEnable<cr>", desc = "Enable minimap for current tab" },
+  --   { "<localleader>ntc", "<cmd>Neominimap TabDisable<cr>", desc = "Disable minimap for current tab" },
+  --
+  --   -- Buffer-Specific Minimap Controls
+  --   { "<localleader>nbt", "<cmd>Neominimap BufToggle<cr>", desc = "Toggle minimap for current buffer" },
+  --   { "<localleader>nbr", "<cmd>Neominimap BufRefresh<cr>", desc = "Refresh minimap for current buffer" },
+  --   { "<localleader>nbo", "<cmd>Neominimap BufEnable<cr>", desc = "Enable minimap for current buffer" },
+  --   { "<localleader>nbc", "<cmd>Neominimap BufDisable<cr>", desc = "Disable minimap for current buffer" },
+  --
+  --   ---Focus Controls
+  --   { "<localleader>nf", "<cmd>Neominimap Focus<cr>", desc = "Focus on minimap" },
+  --   { "<localleader>nu", "<cmd>Neominimap Unfocus<cr>", desc = "Unfocus minimap" },
+  --   { "<localleader>ns", "<cmd>Neominimap ToggleFocus<cr>", desc = "Switch focus on minimap" },
+  -- },
+  -- init = function()
+  --   -- The following options are recommended when layout == "float"
+  --   vim.opt.wrap = false
+  --   vim.opt.sidescrolloff = 36 -- Set a large value
+  --
+  --   --- Put your configuration here
+  --   ---@type Neominimap.UserConfig
+  --   vim.g.neominimap = {
+  --     auto_enable = true,
+  --   }
+  -- end,
+}
