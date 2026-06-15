@@ -4,7 +4,7 @@ return {
     command = 'perlconsole'
   },
   lsp = {
-    perlls = {},
+    perlpls = {},
     perlnavigator = {
       settings = {
         perlnavigator = {
