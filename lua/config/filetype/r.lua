@@ -9,9 +9,9 @@ return {
     }
   },
   lsp = {
-    'r_language_server'
+    r_language_server = {},
   },
-  autocmds = {
+  autocmd = {
     indent = function ()
       vim.b.r_indent_align_args = 1
     end,

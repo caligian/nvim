@@ -4,11 +4,8 @@ return {
     command = 'perlconsole'
   },
   lsp = {
-    {
-      'perlls',
-    },
-    {
-      'perlnavigator',
+    perlls = {},
+    perlnavigator = {
       settings = {
         perlnavigator = {
           perlPath = 'perl',

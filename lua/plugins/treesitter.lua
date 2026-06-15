@@ -1,30 +1,75 @@
 return {
   {
+    'mfussenegger/nvim-treehopper',
+    config = function()
+      vim.cmd [[
+      omap     <silent> m :<C-U>lua require('tsht').nodes()<CR>
+      xnoremap <silent> m :lua require('tsht').nodes()<CR>
+      ]]
+    end
+  },
+  {
+    "kiyoon/treesitter-indent-object.nvim",
+    keys = {
+      {
+        "ai",
+        function() require 'treesitter_indent_object.textobj'.select_indent_outer() end,
+        mode = { "x", "o" },
+        desc = "Select context-aware indent (outer)",
+      },
+      {
+        "aI",
+        function()
+          require 'treesitter_indent_object.textobj'.select_indent_outer(true, 'V')
+          require 'treesitter_indent_object.refiner'.include_surrounding_empty_lines()
+        end,
+        mode = { "x", "o" },
+        desc = "Select context-aware indent (outer, line-wise)",
+      },
+      {
+        "ii",
+        function() require 'treesitter_indent_object.textobj'.select_indent_inner() end,
+        mode = { "x", "o" },
+        desc = "Select context-aware indent (inner, partial range)",
+      },
+      {
+        "iI",
+        function() require 'treesitter_indent_object.textobj'.select_indent_inner(true, 'V') end,
+        mode = { "x", "o" },
+        desc = "Select context-aware indent (inner, entire range) in line-wise visual mode",
+      },
+    },
+  },
+  {
+    'RRethy/nvim-treesitter-textsubjects',
+    config = function()
+      require('nvim-treesitter-textsubjects').configure({
+        prev_selection = ',',
+        keymaps = {
+          ['.'] = 'textsubjects-smart',
+          [';'] = 'textsubjects-container-outer',
+          ['i;'] = 'textsubjects-container-inner',
+        },
+      })
+    end,
+  },
+  {
     "nvim-treesitter/nvim-treesitter",
     branch = 'master',
     lazy = false,
     build = ":TSUpdate",
-    config = function ()
+    config = function()
       require('nvim-treesitter.configs').setup {
-        ensure_installed = {
-          "c",
-          "lua",
-          "vim", "vimdoc",
-          "query",
-          "markdown", "markdown_inline",
-          'python',
-          'r'
-        },
-        sync_install = false,
+        sync_install = true,
         auto_install = true,
-        ignore_install = { "javascript", 'tex', 'latex' },
+        ignore_install = { 'tex', 'nix', 'bash', 'r', 'lua', 'python', 'erlang', 'elixir' },
         highlight = {
           enable = true,
-          disable = {}
+          disable = {'lua'}
         },
         indent = {
           enable = true,
-          disable = {'python'},
+          disable = { 'python' },
         }
       }
     end
@@ -34,64 +79,86 @@ return {
     'nvim-treesitter/nvim-treesitter-textobjects',
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     config = function ()
-      require('nvim-treesitter.configs').setup {
-        textobjects = {
-          move = {
-            enable = true,
-            set_jumps = true,
-            goto_next_start = {
-              ["]="] = "@assignment.lhs",
-              ["]m"] = "@function.outer",
-              ["<A-f>"] = "@assignment.lhs",
-              ["<A-n>"] = "@function.outer",
-              ["]]"] = { query = "@block.outer", desc = "Next block's start" },
-              ["]o"] = "@loop.*",
-              ["]s"] = { query = "@local.scope", query_group = "locals", desc = "Next scope" },
-              ["]z"] = { query = "@fold", query_group = "folds", desc = "Next fold" },
-            },
-            goto_next_end = {
-              ["]M"] = "@function.outer",
-              ["]["] = "@block.outer",
-              ["<A-e>"] = '@function.outer',
-            },
-            goto_previous_start = {
-              ["[="] = "@assignment.lhs",
-              ["<A-b>"] = "@assignment.lhs",
-              ["[m"] = "@function.outer",
-              ["<A-p>"] = "@function.outer",
-              ["[["] = "@block.outer",
-            },
-            goto_previous_end = {
-              ["[M"] = "@function.outer",
-              ["[]"] = "@block.outer",
-              ["<A-a>"] = "@function.outer",
-            },
-            goto_next = {
-              ["]d"] = "@conditional.outer",
-            },
-            goto_previous = {
-              ["[d"] = "@conditional.outer",
-            }
+      require("nvim-treesitter-textobjects").setup {
+        move = {
+          enable = true,
+          set_jumps = true,
+        },
+        select = {
+          enable = true,
+          lookahead = true,
+          selection_modes = {
+            ['@parameter.outer'] = 'v',
+            ['@function.outer'] = 'V',
+            ['@block.outer'] = '<c-v>',
           },
-          select = {
-            enable = true,
-            lookahead = true,
-            keymaps = {
-              ["af"] = "@function.outer",
-              ["if"] = "@function.inner",
-              ["ac"] = "@class.outer",
-              ["ic"] = { query = "@block.inner", desc = "Select inner part of a block region" },
-              ["as"] = { query = "@local.scope", query_group = "locals", desc = "Select language scope" },
-            },
-            selection_modes = {
-              ['@parameter.outer'] = 'v',
-              ['@function.outer'] = 'V',
-              ['@block.outer'] = '<c-v>',
-            },
-            include_surrounding_whitespace = true,
-          },
+          include_surrounding_whitespace = true,
         },
       }
+
+      vim.keymap.set({ "n", "x", "o" }, "]m", function()
+        require("nvim-treesitter-textobjects.move").goto_next_start("@function.outer", "textobjects")
+      end)
+      vim.keymap.set({ "n", "x", "o" }, "]c", function()
+        require("nvim-treesitter-textobjects.move").goto_next_start("@class.outer", "textobjects")
+      end)
+      -- You can also pass a list to group multiple queries.
+      vim.keymap.set({ "n", "x", "o" }, "]o", function()
+        require("nvim-treesitter-textobjects.move").goto_next_start({"@loop.inner", "@loop.outer"}, "textobjects")
+      end)
+      -- You can also use captures from other query groups like `locals.scm` or `folds.scm`
+      vim.keymap.set({ "n", "x", "o" }, "]s", function()
+        require("nvim-treesitter-textobjects.move").goto_next_start("@local.scope", "locals")
+      end)
+      vim.keymap.set({ "n", "x", "o" }, "]z", function()
+        require("nvim-treesitter-textobjects.move").goto_next_start("@fold", "folds")
+      end)
+
+      vim.keymap.set({ "n", "x", "o" }, "]M", function()
+        require("nvim-treesitter-textobjects.move").goto_next_end("@function.outer", "textobjects")
+      end)
+
+      vim.keymap.set({ "n", "x", "o" }, "]C", function()
+        require("nvim-treesitter-textobjects.move").goto_next_end("@class.outer", "textobjects")
+      end)
+
+      vim.keymap.set({ "n", "x", "o" }, "[m", function()
+        require("nvim-treesitter-textobjects.move").goto_previous_start("@function.outer", "textobjects")
+      end)
+
+      vim.keymap.set({ "n", "x", "o" }, "[c", function()
+        require("nvim-treesitter-textobjects.move").goto_previous_start("@class.outer", "textobjects")
+      end)
+
+      vim.keymap.set({ "n", "x", "o" }, "[M", function()
+        require("nvim-treesitter-textobjects.move").goto_previous_end("@function.outer", "textobjects")
+
+      end)
+      vim.keymap.set({ "n", "x", "o" }, "[C", function()
+        require("nvim-treesitter-textobjects.move").goto_previous_end("@class.outer", "textobjects")
+      end)
+      vim.keymap.set({ "n", "x", "o" }, "]d", function()
+        require("nvim-treesitter-textobjects.move").goto_next("@conditional.outer", "textobjects")
+      end)
+      vim.keymap.set({ "n", "x", "o" }, "[d", function()
+        require("nvim-treesitter-textobjects.move").goto_previous("@conditional.outer", "textobjects")
+      end)
+      local ts_repeat_move = require "nvim-treesitter-textobjects.repeatable_move"
+
+      -- Repeat movement with ; and ,
+      -- ensure ; goes forward and , goes backward regardless of the last direction
+      vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move_next)
+      vim.keymap.set({ "n", "x", "o" }, ",", ts_repeat_move.repeat_last_move_previous)
+
+      -- vim way: ; goes to the direction you were moving.
+      -- vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move)
+      -- vim.keymap.set({ "n", "x", "o" }, ",", ts_repeat_move.repeat_last_move_opposite)
+
+      -- Optionally, make builtin f, F, t, T also repeatable with ; and ,
+      vim.keymap.set({ "n", "x", "o" }, "f", ts_repeat_move.builtin_f_expr, { expr = true })
+      vim.keymap.set({ "n", "x", "o" }, "F", ts_repeat_move.builtin_F_expr, { expr = true })
+      vim.keymap.set({ "n", "x", "o" }, "t", ts_repeat_move.builtin_t_expr, { expr = true })
+      vim.keymap.set({ "n", "x", "o" }, "T", ts_repeat_move.builtin_T_expr, { expr = true })
     end
   },
 }

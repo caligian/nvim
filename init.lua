@@ -1,16 +1,8 @@
-require 'lua-utils'
-require 'nvim-utils'
+vim.cmd(":source " .. vim.fn.stdpath('config') .. '/base.vim')
 
-user_config:set_filetypes()
-user_config:load_plugins()
-user_config:set_opts()
-user_config:set_autocmds()
-user_config:set_keymaps()
-user_config:set_buffer_groups()
+local state_utils = require 'nvim-utils.state_utils'
+state_utils.setup()
 
-vim.cmd('set bg=dark')
-vim.cmd('color github_dark')
-
-if vim.g.neovide then
-  vim.cmd("set guifont=Inconsolata\\ Nerd\\ Font\\ Propo:h12")
-end
+vim.cmd.color('material-oceanic')
+vim.cmd.highlight('IndentLine guifg=#48494b')
+vim.cmd.highlight('IndentLineCurrent guifg=#777b7e')

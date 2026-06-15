@@ -1,9 +1,9 @@
-
 return {
   {
     "saghen/blink.cmp",
     event = 'InsertEnter',
-    build = "cargo +nightly-2025-09-30 build --release",
+    version = '1.*',
+    -- build = "cargo +nightly-2025-09-30 build --release",
     dependencies = {
       "mikavilpas/blink-ripgrep.nvim",
       "folke/snacks.nvim",
@@ -59,7 +59,7 @@ return {
           },
         }
       },
-      fuzzy = { implementation = "lua" },
+      fuzzy = { implementation = "rust" },
       signature = { enabled = true },
     },
   }

@@ -1,27 +1,53 @@
 \documentclass[a4paper,11pt]{report}
+% \documentclass[a4paper,12pt]{report}
+
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath}
+
+% Increase paragraph spacing
+\usepackage[skip=12pt]{parskip}
+
+% Table stuff
 \usepackage{longtable}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{tabularx}
+
+% Math stuff
+\usepackage{amsmath}
 \usepackage{amssymb}
+
+% Other utility packages
+\usepackage{bookmark}
+\usepackage{ragged2e}
+\usepackage{xurl}
 \usepackage{lscape}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\usepackage{array}
 \usepackage{enumitem}
 \usepackage{xcolor}
-\usepackage{colortbl}
 \usepackage{rotating}
 \usepackage{hyperref}
 \usepackage{xurl}
 \usepackage{ulem}
-\usepackage[backend=biber,style=authoryear,sorting=nyt]{biblatex}
+
+% Bibliography stuff, enable if needed
+% \usepackage[backend=biber,style=authoryear,sorting=nyt]{biblatex}
+
+% Set margins
 \usepackage[left=1cm,right=1.5cm,top=1.5cm,bottom=1.5cm]{geometry}
 
-\addbibresource{REFERENCE_FILE}
-\renewcommand*{\arraystretch}{1.1}
+% Your bibliography file
+%% \addbibresource{REFERENCE_FILE}
+
+%% Additional row height for tables (looks better)
+% \renewcommand*{\arraystretch}{1.1}
+
+% Mandatory for prevent blue colored references
 \hypersetup{colorlinks = true, urlcolor = blue, linkcolor = blue, citecolor = red}
 
-%% Start
+% Add your custom font sizes here
+%% \newcommand{\HUGE}{\fontsize{40}{48}\selectfont}
+
 \begin{document}
 \setlength{\extrarowheight}{3pt}
 
@@ -42,8 +68,7 @@
 \newpage
 
 \section{Bibliography}{
-    \addbibliography
+    % \addbibliography
 }
 
-%% End
 \end{document}

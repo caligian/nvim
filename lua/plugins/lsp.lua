@@ -1,52 +1,48 @@
-local dict = require 'lua-utils.dict'
-local list = require 'lua-utils.list'
-
 return {
   {
     'mason-org/mason.nvim',
     opts = {}
   },
-  {
-    'stevearc/aerial.nvim',
-    config = function()
-      require("aerial").setup({
-        on_attach = function(bufnr)
-          vim.keymap.set("n", "g{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
-          vim.keymap.set("n", "g}", "<cmd>AerialNext<CR>", { buffer = bufnr })
-        end,
-      })
-      vim.keymap.set("n", "<leader>a", "<cmd>AerialToggle!<CR>")
-    end
-  },
+  -- {
+  --   'stevearc/aerial.nvim',
+  --   config = function()
+  --     require("aerial").setup({
+  --       on_attach = function(bufnr)
+  --         vim.keymap.set("n", "g{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
+  --         vim.keymap.set("n", "g}", "<cmd>AerialNext<CR>", { buffer = bufnr })
+  --       end,
+  --     })
+  --     vim.keymap.set("n", "<leader>a", "<cmd>AerialToggle!<CR>")
+  --   end
+  -- },
   {
     'neovim/nvim-lspconfig',
     dependencies = { 'saghen/blink.cmp' },
     config = function()
-      local fts = {}
-      local i = 1
-
-      for _, config in pairs(user_config.filetypes) do
-        if config:has_lsp_config() then
-          fts[i] = config
-          i = i + 1
-        end
-      end
-
+      local dict = require 'lua-utils.dict'
+      local list = require 'lua-utils.list'
+      local fts = dict.keys(user_config.filetype)
       local capabilities = require('blink.cmp').get_lsp_capabilities()
-      for _, ft in ipairs(fts) do
-        list.each(
-          ft:get_lsp_config(),
-          function(spec)
-            local server, config = unpack(spec)
-            config = vim.deepcopy(config)
-            config = dict.merge(config, {
-              capabilities = vim.deepcopy(capabilities)
-            })
-            vim.lsp.config(server, config)
+
+      list.each(fts, function (ft)
+        local self = user_config.filetype[ft]
+        if not self.lsp then
+          return
+        end
+
+        for server, spec in pairs(self.lsp) do
+          local config = vim.deepcopy(spec)
+          config = dict.mergef(spec, {
+            capabilities = vim.deepcopy(capabilities)
+          })
+          local ok, msg = pcall(vim.lsp.config, server, config)
+          if not ok then
+            printf('[ERROR] %s.lsp: %s\nconfig: %s', self.name, msg, config)
+          else
             vim.lsp.enable(server)
           end
-        )
-      end
+        end
+      end)
     end
   },
   {
@@ -57,6 +53,8 @@ return {
       },
     },
   },
+
+  --- Need to be setup
   {
     "folke/trouble.nvim",
     opts = {},

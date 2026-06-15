@@ -1,10 +1,14 @@
 local nvim = require 'nvim-utils.nvim'
-local buffer = user_config.buffer
+local buffer = require 'nvim-utils.buffer'
+local latex = { line = {}, buffer = {}, jump = {}, select = {} }
+lline = latex.line
+lbuffer = latex.buffer
+ljump = latex.jump
+lselect = latex.select
 
 local function insert_env(env_name)
   local function put_lines(name)
     pcall(function()
-      local buffer = user_config.buffer
       vim.cmd(sprintf('normal! o'))
       local linenum = buffer.get_linenum(vim.fn.bufnr())
       vim.api.nvim_buf_set_lines(0, linenum, linenum, false, {
@@ -49,47 +53,39 @@ local insert_items = function()
 end
 
 local next_main_section = function()
-  buffer.find_below_and_goto(buffer.current(), true, "\\section%*?")
+  buffer.find_below_and_goto(buffer.get_current_id(), true, "\\section%*?")
 end
 
 local prev_main_section = function()
-  buffer.find_above_and_goto(buffer.current(), true, "\\section%*?")
+  buffer.find_above_and_goto(buffer.get_current_id(), true, "\\section%*?")
 end
 
 local next_section = function()
-  buffer.find_below_and_goto(buffer.current(), true, "\\[a-z]*section%*?")
+  buffer.find_below_and_goto(buffer.get_current_id(), true, "\\[a-z]*section%*?")
 end
 
 local prev_section = function()
-  buffer.find_above_and_goto(buffer.current(), true, "\\[a-z]*section%*?")
+  buffer.find_above_and_goto(buffer.get_current_id(), true, "\\[a-z]*section%*?")
 end
 
 local next_env = function()
-  pcall(function()
-    vim.cmd '/\\\\begin'
-  end)
+  pcall(function() vim.cmd '/\\\\begin' end)
 end
 
 local prev_env = function()
-  pcall(function()
-    vim.cmd '?\\\\begin'
-  end)
+  pcall(function() vim.cmd '?\\\\begin' end)
 end
 
 local next_item = function()
-  pcall(function()
-    vim.cmd '/\\\\item'
-  end)
+  pcall(function() vim.cmd '/\\\\item' end)
 end
 
 local prev_item = function()
-  pcall(function()
-    vim.cmd '?\\\\item'
-  end)
+  pcall(function() vim.cmd '?\\\\item' end)
 end
 
 local mark_env = function()
-  local buf = buffer.current()
+  local buf = buffer.get_current_id()
   local line = buffer.current_line(buf)
   local ind = string.find(line, '\\[a-zA-Z0-9_*]+%{')
   local normal = nvim.normal
@@ -101,7 +97,7 @@ local mark_env = function()
   normal("0", sprintf("%dl", ind), "f{v%o")
 end
 
-local make_bib = function ()
+local make_bib = function()
   nvim.command()
 end
 
@@ -114,19 +110,39 @@ local tex2pdf = function(bufname)
   return bufname
 end
 
+-- TODO
+local clear_temp_files = function()
+end
+
 local topdf_and_open = function()
-  local bufname = buffer.name(buffer.current())
+  local bufname = buffer.get_name(buffer.get_current_id())
   local cmd = '! pdflatex ' .. bufname .. ' && evince ' .. tex2pdf(bufname)
   vim.cmd(cmd)
 end
 
 local open = function()
-  local bufname = buffer.name(buffer.current())
+  local bufname = buffer.get_name(buffer.get_current_id())
   vim.cmd(sprintf([[ ! evince %s ]], tex2pdf(bufname)))
 end
 
+function lline.is_section(linenum)
+  local line = buffer.get_current_line(buffer.get_current_id())
+  return string.match(line, [=[^%s*\[a-z]section[*]?]=]) ~= nil
+end
+
+function lselect.section(linenum)
+  local line = nil
+end
+
+local function select_final_arg()
+
+end
+
+local TODO = {
+  'lselect', 'lline'
+}
+
 return {
-  name = 'tex',
   lsp = { "texlab" },
   buffer = {
     opts = {
