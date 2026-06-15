@@ -116,13 +116,13 @@ end
 
 local topdf_and_open = function()
   local bufname = buffer.get_name(buffer.get_current_id())
-  local cmd = '! pdflatex ' .. bufname .. ' && evince ' .. tex2pdf(bufname)
+  local cmd = '! pdflatex ' .. bufname .. ' && papers ' .. tex2pdf(bufname)
   vim.cmd(cmd)
 end
 
 local open = function()
   local bufname = buffer.get_name(buffer.get_current_id())
-  vim.cmd(sprintf([[ ! evince %s ]], tex2pdf(bufname)))
+  vim.cmd(sprintf([[ ! papers %s ]], tex2pdf(bufname)))
 end
 
 function lline.is_section(linenum)
@@ -143,7 +143,7 @@ local TODO = {
 }
 
 return {
-  lsp = { "texlab" },
+  lsp = {texlab = {}},
   buffer = {
     opts = {
       wrapmargin = 0,
@@ -151,17 +151,14 @@ return {
       textwidth = 80,
     }
   },
-  keymaps = {
+  keymap = {
     insert_env = { 'n', '<space>ie', insert_env, { desc = 'Insert env' } },
     insert_enum = { 'n', '<space>il', insert_enum, { desc = 'Insert list env' } },
     insert_items = { 'n', '<space>ii', insert_items, { desc = 'Insert items env' } },
     insert_item = { { 'i', 'n' }, '<M-j>', put_item, { desc = 'Insert item on next line' } },
-
     mark_env = { 'n', '<space>%', mark_env, { desc = 'Visually mark environment' } },
-
     toggle_toc = { 'n', '<C-t>', '<plug>(vimtex-toc-toggle)', { desc = 'Toggle table of contents' } },
     open_toc = { 'n', '<C-z>', '<plug>(vimtex-toc-open)', { desc = 'Open table of contents' } },
-
     next_main_section = { { 'i', 'v', 'n' }, "<C-M-e>", next_main_section, { desc = 'Goto next \\section' } },
     prev_main_section = { { 'i', 'v', 'n' }, '<C-M-a>', prev_main_section, { desc = 'Goto prev \\section' } },
     next_section = { { 'i', 'v', 'n' }, "<C-M-n>", next_section, { desc = 'Goto next \\*section' } },
@@ -170,7 +167,6 @@ return {
     prev_env = { { 'i', 'v', 'n' }, '<M-p>', prev_env, { desc = 'Goto prev env' } },
     next_item = { { 'i', 'v', 'n' }, "<M-f>", next_item, { desc = 'Goto next item' } },
     prev_item = { { 'i', 'v', 'n' }, '<M-b>', prev_item, { desc = 'Goto prev item' } },
-
     topdf = { 'n', '<space>cp', topdf, { desc = 'To PDF' } },
     topdf_and_open = { 'n', '<space>cP', topdf_and_open, { desc = 'To PDF and preview (blocking)' } },
     preview = { 'n', "<space>co", open, { desc = 'Preview file (blocking)' } },

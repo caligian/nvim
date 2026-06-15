@@ -11,7 +11,14 @@ return {
         Lua = {
           runtime = { version = 'LuaJIT' },
           diagnostics = {
-            globals = { "vim", "apply", "as_list", "assertf", "assert_type", "assert_unless", "assert_when", "bless", "callable", "defined", "dump", "equals", "errorf", "identity", "inspect", "invert", "is_falsy", "is_truthy", "L", "literal", "partial", "paste", "paste0", "pp", "printf", "readlines", "rpartial", "slurp", "spit", "sprintf", "thread", "undefined", "unless", "unless_falsy", "unless_nil", "unless_truthy", "unpack", "when", "when_falsy", "when_nil", "when_truthy", "writelines", "system", "systemlist", "user_config", "user_state" },
+            globals = {
+              "vim", "apply", "as_list", "assertf", "assert_type", "assert_unless", "assert_when", "bless", "callable",
+              "defined", "dump", "equals", "errorf", "identity", "inspect", "invert", "is_falsy", "is_truthy", "L",
+              "literal", "partial", "paste", "paste0", "pp", "printf", "readlines", "rpartial", "slurp", "spit",
+              "sprintf", "thread", "undefined", "unless", "unless_falsy", "unless_nil", "unless_truthy", "unpack", "when",
+              "when_falsy", "when_nil", "when_truthy", "writelines", "system", "systemlist", "user_config", "user_state",
+              "basename", "dirname", "buffer", "autocmd", "keymap", "buffer_group", "nvim", "augroup", "filetype"
+            },
             disable = {
               'cast-local-type',
               'missing-fields',

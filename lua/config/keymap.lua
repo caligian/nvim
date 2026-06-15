@@ -1,16 +1,18 @@
 local path = require 'lua-utils.path_utils'
 local dict = require 'lua-utils.dict'
-local buffer = require 'nvim-utils.buffer'
-local buffer_group = require 'nvim-utils.buffer_group'
-local filetype = require 'nvim-utils.filetype'
-local nvim = require 'nvim-utils.nvim'
-local repl = require 'nvim-utils.repl'
-local tabpage = require 'nvim-utils.tabpage'
-local cmd = vim.cmd
-local recent_buffers = user_config.recent_buffers
-local scratch_buffer_path = user_config.path.dir.data .. '/scratch.lua'
 
 require 'nvim-utils.keymap'
+require 'nvim-utils.buffer'
+require 'nvim-utils.buffer_group'
+require 'nvim-utils.filetype'
+require 'nvim-utils.nvim'
+require 'nvim-utils.repl'
+require 'nvim-utils.tabpage'
+
+local recent_buffers = user_config.recent_buffers
+local scratch_buffer_path = user_config.path.dir.data .. '/scratch.lua'
+local bg_utils = buffer_group.utils
+local ft_utils = filetype.utils
 
 local function create_scratch_buffer()
   local buf = vim.fn.bufexists(scratch_buffer_path)
@@ -66,7 +68,7 @@ local function get_repl(shell, running, callback)
 
     if exists then
       if running then
-        return exists:running() and callback(exists)
+        return exists:is_running() and callback(exists)
       else
         return callback(exists)
       end
@@ -74,29 +76,29 @@ local function get_repl(shell, running, callback)
   end
 end
 
-local function make_repl(shell, callback)
+local function make_repl(sh, callback)
   return function()
     local bufnr = vim.fn.bufnr()
-    local term = repl.create(bufnr, shell)
+    local term = repl.create(bufnr, sh)
     if term then return callback(term) end
   end
 end
 
-local function get_running_repl(shell, callback)
-  return get_repl(shell, true, callback)
+local function get_running_repl(sh, callback)
+  return get_repl(sh, true, callback)
 end
 
-local function shell_call(method, running)
+local function sh_call(method, running)
   running = when_nil(running, L(true))
   return function()
-    local term = user_config.repls.shell
+    local term = user_config.repl.sh
     if not term then
       repl.start_shell()
     end
 
     if term then
       if running then
-        return term:running() and term[method](term)
+        return term:is_running() and term[method](term)
       else
         return term[method](term)
       end
@@ -105,26 +107,25 @@ local function shell_call(method, running)
 end
 
 local function get_project()
-  local buf = buffer.get_current_id()
-  local ft = filetype.buf_get(buf)
-  local proj
-  local opts = {}
+  local bufnr = buffer.get_current_id()
+  local ok, msg = buffer.get_filetype(bufnr)
+  local ft
 
-  if ft and ft.root then
-    opts = ft.root
+  if not ok then
+    return
+  else
+    ft = msg
   end
 
-  proj = buffer.get_workspace(buf, {
-    pattern = opts.pattern,
-    depth = opts.depth,
-    callback = opts.callback
-  })
-
-  if not proj then
-    return false
+  local ft_obj = user_config.filetype[ft]
+  if not ft_obj then
+    ft_obj = { pattern = { '.git' }, check_depth = 4 }
+  else
+    ft_obj = ft_obj.root
   end
 
-  return proj
+  local pattern, check_depth = ft_obj.pattern, ft_obj.check_depth
+  return buffer.get_root_dir(bufnr, pattern, check_depth)
 end
 
 local function grep_project(live)
@@ -195,221 +196,233 @@ local _live_grep_project = grep_project(true)
 
 --- Lua eval
 keymap.define {
+  --- sudo rw
+  sudo_read = {'n', '<leader>fR', ':SudaRead ', {desc = 'sudo read'}},
+  sudo_write = {'n', '<leader>fS', ':SudaWrite ', {desc = 'sudo write'}},
+
   --- Misc
-  gj = {{ "n", "v" }, 'j', 'gj'},
-  gk = {{ 'n', 'v' }, 'k', 'gk'},
-  C_z = {{ 'n', 'v', 'o', 'i', 'c' }, '<C-z>', '<Nop>'},
-  esc_term = {'t', '<Esc>', '<C-\\><C-n>', {desc = 'Go to normal mode'}},
+  gj = { { "n", "v" }, 'j', 'gj' },
+  gk = { { 'n', 'v' }, 'k', 'gk' },
+  C_z = { { 'n', 'v', 'o', 'i', 'c' }, '<C-z>', '<Nop>' },
+  esc_term = { 't', '<Esc>', '<C-\\><C-n>', { desc = 'Go to normal mode' } },
   registers = { 'n', "<leader>'", tbuiltin('registers'), { desc = 'Registers' } },
   jumplist = { 'n', "<C-M-o>", tbuiltin('jumplist'), { desc = 'Jumplist' } },
   save_and_quit = { 'n', '<leader>qq', '<cmd>wa <bar> qa<CR>', { desc = 'Write & quit' } },
   window = { 'n', '<leader>w', '<C-w>', { desc = 'Window' } },
   picker_resume = { 'n', '<leader><leader>', tbuiltin('resume'), { desc = 'Resume picker' } },
-  wrap_text = {'n', '<M-q>', 'gqq', { desc = 'Wrap text' }},
-  wrap_text_in_region = {{ 'v' }, '<M-q>', 'gq', { desc = 'Wrap text' }},
+  wrap_text = { 'n', '<M-q>', 'gqq', { desc = 'Wrap text' } },
+  wrap_text_in_region = { { 'v' }, '<M-q>', 'gq', { desc = 'Wrap text' } },
 
   -- Clipboard
   clip_paste = { { 'n' }, '<C-M-y>', '"+p', { desc = 'wl-paste' } },
   clip_copy = { { 'v' }, '<M-w>', '"+y', { desc = 'wl-copy' } },
 
   -- Git stuff
-  git_git = {'n', '<leader>gg', ':vert Git<CR>', { desc = "Git" }},
-  git_stage = {'n', '<leader>gs', ':Git stage %<CR>', { desc = "Stage buffer" }},
-  git_add = {'n', '<leader>ga', ':Git add %<CR>', { desc = "Add buffer" }},
-  git_commit = {'n', '<leader>gc', ':Git commit<CR>', { desc = "Commit" }},
-  git_log = {'n', '<leader>gl', ':Git log<CR>', { desc = "Log" }},
-  git_push = {'n', '<leader>gp', ':Git push<CR>', { desc = "Push to remote" }},
-  git_files = {'n', '<leader>gf', tbuiltin('git_files'), { desc = "Push to remote" }},
-  git_branches = {'n', '<leader>gb', tbuiltin('git_branches'), { desc = 'Branches' }},
-  git_status = {'n', '<leader>gS', tbuiltin('git_status'), { desc = 'Status' }},
-  git_commits = {'n', '<leader>g?', tbuiltin('git_commits'), { desc = 'Commits' }},
+  git_git = { 'n', '<leader>gg', ':vert Git<CR>', { desc = "Git" } },
+  git_stage = { 'n', '<leader>gs', ':Git stage %<CR>', { desc = "Stage buffer" } },
+  git_add = { 'n', '<leader>ga', ':Git add %<CR>', { desc = "Add buffer" } },
+  git_commit = { 'n', '<leader>gc', ':Git commit<CR>', { desc = "Commit" } },
+  git_log = { 'n', '<leader>gl', ':Git log<CR>', { desc = "Log" } },
+  git_push = { 'n', '<leader>gp', ':Git push<CR>', { desc = "Push to remote" } },
+  git_files = { 'n', '<leader>gf', tbuiltin('git_files'), { desc = "Push to remote" } },
+  git_branches = { 'n', '<leader>gb', tbuiltin('git_branches'), { desc = 'Branches' } },
+  git_status = { 'n', '<leader>gS', tbuiltin('git_status'), { desc = 'Status' } },
+  git_commits = { 'n', '<leader>g?', tbuiltin('git_commits'), { desc = 'Commits' } },
 
   -- LSP
-  lsp_code_action = {'n', '<leader>la', function() vim.lsp.buf.code_action() end, { desc = 'Code actions' }},
-  lsp_implementation = {'n', '<leader>li', function() vim.lsp.buf.implementation() end, { desc = 'Find implementation' }},
-  lsp_buffer_rename = {'n', '<leader>l%', function() vim.lsp.buf.rename() end, { desc = 'Rename something' }},
-  lsp_buffer_references = {'n', '<leader>lr', function() vim.lsp.buf.references() end, { desc = 'References' }},
-  lsp_start = {'n', '<leader>ll', ':LspStart<CR>', { desc = 'Start LSP' }},
-  lsp_stop = {'n', '<leader>lq', ':LspStop<CR>', { desc = 'Stop LSP' }},
-  lsp_restart = {'n', '<leader>lL', ':LspRestart<CR>', { desc = 'Restart LSP' }},
-  lsp_document_symbols = {'n', '<leader>ls', tbuiltin('lsp_document_symbols'), { desc = 'Document symbols' }},
-  lsp_workspace_symbols = {'n', '<leader>lw', tbuiltin('lsp_workspace_symbols'), { desc = 'Workspace symbols' }},
-  lsp_log = {'n', '<leader>l?', ':LspLog<CR>', { desc = 'Workspace symbols' }},
-  lsp_buffer_format = {'n', '<leader>lf', ':lua vim.lsp.buf.format()<CR>', { desc = 'Format buffer' }},
+  lsp_code_action = { 'n', '<leader>la', function() vim.lsp.buf.code_action() end, { desc = 'Code actions' } },
+  lsp_implementation = { 'n', '<leader>li', function() vim.lsp.buf.implementation() end, { desc = 'Find implementation' } },
+  lsp_buffer_rename = { 'n', '<leader>l%', function() vim.lsp.buf.rename() end, { desc = 'Rename something' } },
+  lsp_buffer_references = { 'n', '<leader>lr', function() vim.lsp.buf.references() end, { desc = 'References' } },
+  lsp_start = { 'n', '<leader>ll', ':LspStart<CR>', { desc = 'Start LSP' } },
+  lsp_stop = { 'n', '<leader>lq', ':LspStop<CR>', { desc = 'Stop LSP' } },
+  lsp_restart = { 'n', '<leader>lL', ':LspRestart<CR>', { desc = 'Restart LSP' } },
+  lsp_document_symbols = { 'n', '<leader>ls', tbuiltin('lsp_document_symbols'), { desc = 'Document symbols' } },
+  lsp_workspace_symbols = { 'n', '<leader>lw', tbuiltin('lsp_workspace_symbols'), { desc = 'Workspace symbols' } },
+  lsp_log = { 'n', '<leader>l?', ':LspLog<CR>', { desc = 'Workspace symbols' } },
+  lsp_buffer_format = { 'n', '<leader>lf', ':lua vim.lsp.buf.format()<CR>', { desc = 'Format buffer' } },
 
   -- Tabs
-  tab_next = {'n', '<leader><tab>n', ':tabnext<CR>', { desc = 'Next tab' }},
-  tab_previous = {'n', '<leader><tab>p', ':tabprev<CR>', { desc = 'Previous tab' }},
-  tab_close = {'n', '<leader><tab>k', ':tabclose<CR>', { desc = 'Close tab' }},
-  tab_new = {'n', '<leader><tab><tab>', ':tabnew <CR>', { desc = 'Open a new tab' }},
-  tab_buffers = {'n', '<leader><tab>b', function() tabpage.buffer_picker() end, { desc = 'Select buffer' }},
-  tab_1 = {'n', '<leader><tab>1', '1gt', { desc = 'Tab 1' }},
-  tab_2 = {'n', '<leader><tab>2', '2gt', { desc = 'Tab 2' }},
-  tab_3 = {'n', '<leader><tab>3', '3gt', { desc = 'Tab 3' }},
-  tab_4 = {'n', '<leader><tab>4', '4gt', { desc = 'Tab 4' }},
-  tab_5 = {'n', '<leader><tab>5', '5gt', { desc = 'Tab 5' }},
-  tab_6 = {'n', '<leader><tab>6', '6gt', { desc = 'Tab 6' }},
-  tab_7 = {'n', '<leader><tab>7', '7gt', { desc = 'Tab 7' }},
-  tab_8 = {'n', '<leader><tab>8', '8gt', { desc = 'Tab 8' }},
-  tab_9 = {'n', '<leader><tab>9', '9gt', { desc = 'Tab 9' }},
-  tab_0 = {'n', '<leader><tab>10', '10gt', { desc = 'Tab 10' }},
+  tab_next = { 'n', '<leader><tab>n', ':tabnext<CR>', { desc = 'Next tab' } },
+  tab_previous = { 'n', '<leader><tab>p', ':tabprev<CR>', { desc = 'Previous tab' } },
+  tab_close = { 'n', '<leader><tab>k', ':tabclose<CR>', { desc = 'Close tab' } },
+  tab_new = { 'n', '<leader><tab><tab>', ':tabnew <CR>', { desc = 'Open a new tab' } },
+  tab_buffers = { 'n', '<leader><tab>b', function() tabpage.buffer_picker() end, { desc = 'Select buffer' } },
+  tab_1 = { 'n', '<leader><tab>1', '1gt', { desc = 'Tab 1' } },
+  tab_2 = { 'n', '<leader><tab>2', '2gt', { desc = 'Tab 2' } },
+  tab_3 = { 'n', '<leader><tab>3', '3gt', { desc = 'Tab 3' } },
+  tab_4 = { 'n', '<leader><tab>4', '4gt', { desc = 'Tab 4' } },
+  tab_5 = { 'n', '<leader><tab>5', '5gt', { desc = 'Tab 5' } },
+  tab_6 = { 'n', '<leader><tab>6', '6gt', { desc = 'Tab 6' } },
+  tab_7 = { 'n', '<leader><tab>7', '7gt', { desc = 'Tab 7' } },
+  tab_8 = { 'n', '<leader><tab>8', '8gt', { desc = 'Tab 8' } },
+  tab_9 = { 'n', '<leader><tab>9', '9gt', { desc = 'Tab 9' } },
+  tab_0 = { 'n', '<leader><tab>10', '10gt', { desc = 'Tab 10' } },
 
   --- Eval lua on the fly like emacs lisp
   eval_region = {
     'v', '<leader>ee', function()
-      local region = nvim.region()
-      if not region then return end
-      nvim.loadstring(region)
-    end, { desc = 'Lua eval region' } 
+    local region = nvim.region()
+    if not region then return end
+    nvim.loadstring(region)
+  end, { desc = 'Lua eval region' }
   },
   eval_buffer = {
     'n', '<leader>eb', function()
-      local ok, bufstring = buffer.as_string(
-        buffer.get_current_id()
-      )
-      if ok then
-        nvim.loadstring(bufstring)
-      end
-    end, { desc = 'Lua eval region' } 
+    local ok, bufstring = buffer.as_string(
+      buffer.get_current_id()
+    )
+    if ok then
+      nvim.loadstring(bufstring)
+    end
+  end, { desc = 'Lua eval region' }
   },
   eval_line = {
     'n', '<leader>ee', function()
-      local ok, line = buffer.get_current_line(
-        buffer.get_current_id()
-      )
-      if ok then
-        nvim.loadstring(line)
-      end
-    end, { desc = 'Lua eval line' } 
+    local ok, line = buffer.get_current_line(
+      buffer.get_current_id()
+    )
+    if ok then
+      nvim.loadstring(line)
+    end
+  end, { desc = 'Lua eval line' }
   },
 
   --- REPL
   repl_start = {
     'n', '<leader>rr', make_repl(false, function(term)
-      term:start()
-    end), { desc = 'Start' }
+    term:start()
+  end), { desc = 'Start' }
   },
   repl_stop = {
     'n', '<leader>rq', get_running_repl(false, function(term)
-      term:stop()
-    end), { desc = 'Stop' }
+    term:stop()
+  end), { desc = 'Stop' }
   },
   repl_split_below = {
     'n', '<leader>rs', get_running_repl(false, function(term)
-      term:split_below()
-    end), { desc = 'Split below' }
+    term:split_below()
+  end), { desc = 'Split below' }
   },
   repl_split_right = {
     'n', '<leader>rv', get_running_repl(false, function(term)
-      term:split_right()
-    end), { desc = 'Split on right' }
+    term:split_right()
+  end), { desc = 'Split on right' }
   },
   repl_send_buffer = {
     'n', '<leader>rb', get_running_repl(false, function(term)
-      term:send_buffer()
-    end), { desc = 'Send buffer' }
+    term:send_buffer()
+  end), { desc = 'Send buffer' }
   },
   repl_send_line = {
     'n', '<leader>re', get_running_repl(false, function(term)
-      term:send_current_line()
-    end), { desc = 'Send current line' }
+    term:send_current_line()
+  end), { desc = 'Send current line' }
   },
   repl_send_region = {
     'v', '<leader>re', get_running_repl(false, function(term)
-      term:send_region()
-    end), { desc = 'Send region' }
+    term:send_region()
+  end), { desc = 'Send region' }
   },
   repl_send_C_c = {
     'n', '<leader>rc', get_running_repl(false, function(term)
-      term:send_ctrl_c()
-    end), { desc = 'Send Ctrl-c' }
+    term:send_ctrl_c()
+  end), { desc = 'Send Ctrl-c' }
   },
   repl_send_C_d = {
     'n', '<leader>rd', get_running_repl(false, function(term)
-      term:send_ctrl_d()
-    end), { desc = 'Send Ctrl-d' }
+    term:send_ctrl_d()
+  end), { desc = 'Send Ctrl-d' }
   },
 
-  --- Workspace root shell
+  --- Workspace root sh
   repl_workspace_start = {
     'n', '<leader><enter><enter>', make_repl(true, function(term)
-      term:start()
-    end), { desc = 'Start' }
+    term:start()
+  end), { desc = 'Start' }
   },
   repl_workspace_stop = {
     'n', '<leader><enter>q', get_running_repl(true, function(term)
-      term:stop()
-    end), { desc = 'Stop' }
+    term:stop()
+  end), { desc = 'Stop' }
   },
   repl_workspace_split_below = {
     'n', '<leader><enter>s', get_running_repl(true, function(term)
-      term:split_below()
-    end), { desc = 'Split below' }
+    term:split_below()
+  end), { desc = 'Split below' }
   },
   repl_workspace_split_right = {
     'n', '<leader><enter>v', get_running_repl(true, function(term)
-      term:split_right()
-    end), { desc = 'Split on right' }
+    term:split_right()
+  end), { desc = 'Split on right' }
   },
   repl_workspace_send_buffer = {
     'n', '<leader><enter>b', get_running_repl(true, function(term)
-      term:send_buffer()
-    end), { desc = 'Send buffer' }
+    term:send_buffer()
+  end), { desc = 'Send buffer' }
   },
   repl_workspace_send_current_line = {
     'n', '<leader><enter>e', get_running_repl(true, function(term)
-      term:send_current_line()
-    end), { desc = 'Send current line' }
+    term:send_current_line()
+  end), { desc = 'Send current line' }
   },
   repl_workspace_send_region = {
     'v', '<leader><enter>e', get_running_repl(true, function(term)
-      term:send_region()
-    end), { desc = 'Send region' }
+    term:send_region()
+  end), { desc = 'Send region' }
   },
   repl_workspace_send_C_c = {
     'n', '<leader><enter>c', get_running_repl(true, function(term)
-      term:send_ctrl_c()
-    end), { desc = 'Send Ctrl-c' }
+    term:send_ctrl_c()
+  end), { desc = 'Send Ctrl-c' }
   },
   repl_workspace_send_C_d = {
     'n', '<leader><enter>d', get_running_repl(true, function(term)
-      term:send_ctrl_d()
-    end), { desc = 'Send Ctrl-d' }
+    term:send_ctrl_d()
+  end), { desc = 'Send Ctrl-d' }
   },
+
+  --- General shell
+  sh_start = { 'n', '<leader>xx', sh_call('start', false), { desc = 'Start' } },
+  sh_hide = { 'n', '<leader>xk', sh_call('hide'), { desc = 'Hide window' } },
+  sh_split_below = { 'n', '<leader>xs', sh_call('split_below'), { desc = 'Split below' } },
+  sh_split_right = { 'n', '<leader>xv', sh_call('split_right'), { desc = 'Split right' } },
+  sh_stop = {
+    'n', '<leader>xq',
+    function()
+      local term = user_config.repl.sh
+      if not term then
+        return
+      end
+
+      if term:is_running() then
+        term:stop()
+        user_config.repl.sh = false
+      end
+    end,
+    { desc = 'Kill' }
+  },
+
+  --- File operations
+  file_find = { 'n', '<leader>f.', tbuiltin('find_files'), { desc = 'List dir' } },
+  file_live_grep = { 'n', '<leader>f?', tbuiltin('live_grep'), { desc = 'Live grep dir' } },
+  file_git_files = { 'n', '<leader>fg', tbuiltin('git_files'), { desc = 'git ls-files' } },
+  file_grep_string = { 'n', '<leader>f/', tbuiltin('grep_string'), { desc = 'Grep dir' } },
+  file_oldfiles = { 'n', '<leader>fr', tbuiltin('oldfiles'), { desc = 'List dir' } },
+  file_write_buffer = { 'n', '<leader>fs', ':w<CR>', { desc = 'Write buffer' } },
+  file_write_buffer_as = { 'n', '<leader>fw', ':w ', { desc = 'Save as?' } },
+  file_open_nvim_config = { 'n', '<leader>fp', ':e ~/.config/nvim<CR>', { desc = 'Nvim config dir' } },
+  file_open_nvim_lua_config = { 'n', '<leader>fP', ':e ~/.config/nvim/lua<CR>', { desc = 'Nvim lua config dir' } },
+  file_source = { 'n', '<leader>fv', ':w! <bar> source %<CR>', { desc = 'Source buffer' } },
+  file_browser = {
+    'n', '<leader>ff',
+    function()
+      require("telescope").extensions.file_browser.file_browser(topts({ depth = 2 }))
+    end,
+    { desc = 'File browser' }
+  },
+  file_netrw = { 'n', '<leader>fd', ':exec ":e " . getcwd()<CR>', { desc = 'Netrw cwd' } },
 }
-
---- Global shell
-keymap.define.shell_start('n', '<leader>xx', shell_call('start', false), { desc = 'Start' })
-keymap.define.shell_hide('n', '<leader>xk', shell_call('hide'), { desc = 'Hide window' })
-keymap.define.shell_split_below('n', '<leader>xs', shell_call('split_below'), { desc = 'Split below' })
-keymap.define.shell_split_right('n', '<leader>xv', shell_call('split_right'), { desc = 'Split right' })
-keymap.define.shell_stop('n', '<leader>xq', function()
-  local term = user_config.repls.shell
-  if not term then
-    return
-  end
-
-  if term:running() then
-    term:stop()
-    user_config.repls.shell = false
-  end
-end, { desc = 'Kill' })
-
---- File operations
-keymap.define.file_find('n', '<leader>f.', tbuiltin('find_files'), { desc = 'List dir' })
-keymap.define.file_live_grep('n', '<leader>f?', tbuiltin('live_grep'), { desc = 'Live grep dir' })
-keymap.define.file_git_files('n', '<leader>fg', tbuiltin('git_files'), { desc = 'git ls-files' })
-keymap.define.file_grep_string('n', '<leader>f/', tbuiltin('grep_string'), { desc = 'Grep dir' })
-keymap.define.file_oldfiles('n', '<leader>fr', tbuiltin('oldfiles'), { desc = 'List dir' })
-keymap.define.file_write_buffer('n', '<leader>fs', ':w<CR>', { desc = 'Write buffer' })
-keymap.define.file_write_buffer_as('n', '<leader>fw', ':w ', { desc = 'Save as?' })
-keymap.define.file_open_nvim_config('n', '<leader>fp', ':e ~/.config/nvim<CR>', { desc = 'Nvim config dir' })
-keymap.define.file_open_nvim_lua_config('n', '<leader>fP', ':e ~/.config/nvim/lua<CR>', { desc = 'Nvim lua config dir' })
-keymap.define.file_source('n', '<leader>fv', ':w! <bar> source %<CR>', { desc = 'Source buffer' })
-keymap.define.file_browser('n', '<leader>ff', function()
-  require("telescope").extensions.file_browser.file_browser(topts { depth = 3 })
-end, { desc = 'File browser' })
-keymap.define.file_netrw('n', '<leader>fd', ':exec ":e " . getcwd()<CR>', { desc = 'Netrw cwd' })
 
 --- Buffers
 keymap.define.buffer_select('n', '<leader>bb', tbuiltin('buffers'), { desc = 'Buffers' })
@@ -418,7 +431,7 @@ keymap.define.buffer_previous('n', '<leader>bp', '<cmd>bprev<CR>', { desc = 'Pre
 keymap.define.buffer_next('n', '<leader>bn', '<cmd>bnext<CR>', { desc = 'Next buffer' })
 keymap.define.buffer_hide('n', '<leader>bk', '<cmd>hide<CR>', { desc = 'Hide buffer' })
 keymap.define.buffer_wipeout('n', '<leader>bq', '<cmd>bwipeout! %<CR>', { desc = 'Wipeout buffer' })
-keymap.define.buffer_groups('n', '<leader>bg', function() buffer_group.buffer_picker(vim.fn.bufnr()) end,
+keymap.define.buffer_groups('n', '<leader>bg', function() bg_utils.buffer_picker(vim.fn.bufnr()) end,
   { desc = 'Show buffer groups for buffer' })
 keymap.define.buffer_pop(
   'n', '<leader>bl', function()
@@ -437,13 +450,13 @@ keymap.define.buffer_pop(
 -- LSP stuff
 --- Buffer groups
 keymap.define.buffer_groups('n', '<leader>>', function()
-  buffer_group.buffer_group_picker()
+  bg_utils.buffer_group_picker()
 end, { desc = 'Show buffer groups' })
 
 keymap.define.filetype_buffer_groups('n', '<leader>bf', function()
   local bufnr = buffer.get_current_id()
   local ft = buffer.filetype(bufnr)
-  local exists = user_config.buffer_groups[ft]
+  local exists = user_config.buffer_group[ft]
   if exists then exists:picker() end
 end, { desc = 'Show buffer groups' })
 
@@ -473,13 +486,13 @@ end, { desc = 'Projects' })
 keymap.define.project_buffers('n', '<leader>pb', function()
   local bufnr = buffer.get_current_id()
   local ws = buffer.get_root_dir(bufnr)
-  local exists = user_config.buffer_groups[ws]
+  local exists = user_config.buffer_group[ws]
   if exists then exists:picker() end
 end, { desc = 'Show buffer groups' })
 keymap.define.project_buffer_group('n', '<leader>.', function()
   local bufnr = buffer.get_current_id()
   local ws = buffer.get_root_dir(bufnr)
-  local exists = user_config.buffer_groups[ws]
+  local exists = user_config.buffer_group[ws]
 
   if not exists then
     exists = buffer_group(ws, ws)
