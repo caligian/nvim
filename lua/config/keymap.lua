@@ -9,10 +9,9 @@ require 'nvim-utils.nvim'
 require 'nvim-utils.repl'
 require 'nvim-utils.tabpage'
 
-local recent_buffers = user_config.recent_buffers
+local recent_buffers = user_config.buffer.recent
 local scratch_buffer_path = user_config.path.dir.data .. '/scratch.lua'
 local bg_utils = buffer_group.utils
-local ft_utils = filetype.utils
 
 local function create_scratch_buffer()
   local buf = vim.fn.bufexists(scratch_buffer_path)
@@ -92,16 +91,10 @@ local function sh_call(method, running)
   running = when_nil(running, L(true))
   return function()
     local term = user_config.repl.sh
-    if not term then
-      repl.start_shell()
-    end
-
-    if term then
-      if running then
-        return term:is_running() and term[method](term)
-      else
-        return term[method](term)
-      end
+    if running then
+      return term --[[@as terminal]]:is_running() and term[method](term)
+    else
+      return term[method](term)
     end
   end
 end
@@ -197,8 +190,8 @@ local _live_grep_project = grep_project(true)
 --- Lua eval
 keymap.define {
   --- sudo rw
-  sudo_read = {'n', '<leader>fR', ':SudaRead ', {desc = 'sudo read'}},
-  sudo_write = {'n', '<leader>fS', ':SudaWrite ', {desc = 'sudo write'}},
+  sudo_read = { 'n', '<leader>fR', ':SudaRead ', { desc = 'sudo read' } },
+  sudo_write = { 'n', '<leader>fS', ':SudaWrite ', { desc = 'sudo write' } },
 
   --- Misc
   gj = { { "n", "v" }, 'j', 'gj' },
@@ -288,121 +281,6 @@ keymap.define {
   end, { desc = 'Lua eval line' }
   },
 
-  --- REPL
-  repl_start = {
-    'n', '<leader>rr', make_repl(false, function(term)
-    term:start()
-  end), { desc = 'Start' }
-  },
-  repl_stop = {
-    'n', '<leader>rq', get_running_repl(false, function(term)
-    term:stop()
-  end), { desc = 'Stop' }
-  },
-  repl_split_below = {
-    'n', '<leader>rs', get_running_repl(false, function(term)
-    term:split_below()
-  end), { desc = 'Split below' }
-  },
-  repl_split_right = {
-    'n', '<leader>rv', get_running_repl(false, function(term)
-    term:split_right()
-  end), { desc = 'Split on right' }
-  },
-  repl_send_buffer = {
-    'n', '<leader>rb', get_running_repl(false, function(term)
-    term:send_buffer()
-  end), { desc = 'Send buffer' }
-  },
-  repl_send_line = {
-    'n', '<leader>re', get_running_repl(false, function(term)
-    term:send_current_line()
-  end), { desc = 'Send current line' }
-  },
-  repl_send_region = {
-    'v', '<leader>re', get_running_repl(false, function(term)
-    term:send_region()
-  end), { desc = 'Send region' }
-  },
-  repl_send_C_c = {
-    'n', '<leader>rc', get_running_repl(false, function(term)
-    term:send_ctrl_c()
-  end), { desc = 'Send Ctrl-c' }
-  },
-  repl_send_C_d = {
-    'n', '<leader>rd', get_running_repl(false, function(term)
-    term:send_ctrl_d()
-  end), { desc = 'Send Ctrl-d' }
-  },
-
-  --- Workspace root sh
-  repl_workspace_start = {
-    'n', '<leader><enter><enter>', make_repl(true, function(term)
-    term:start()
-  end), { desc = 'Start' }
-  },
-  repl_workspace_stop = {
-    'n', '<leader><enter>q', get_running_repl(true, function(term)
-    term:stop()
-  end), { desc = 'Stop' }
-  },
-  repl_workspace_split_below = {
-    'n', '<leader><enter>s', get_running_repl(true, function(term)
-    term:split_below()
-  end), { desc = 'Split below' }
-  },
-  repl_workspace_split_right = {
-    'n', '<leader><enter>v', get_running_repl(true, function(term)
-    term:split_right()
-  end), { desc = 'Split on right' }
-  },
-  repl_workspace_send_buffer = {
-    'n', '<leader><enter>b', get_running_repl(true, function(term)
-    term:send_buffer()
-  end), { desc = 'Send buffer' }
-  },
-  repl_workspace_send_current_line = {
-    'n', '<leader><enter>e', get_running_repl(true, function(term)
-    term:send_current_line()
-  end), { desc = 'Send current line' }
-  },
-  repl_workspace_send_region = {
-    'v', '<leader><enter>e', get_running_repl(true, function(term)
-    term:send_region()
-  end), { desc = 'Send region' }
-  },
-  repl_workspace_send_C_c = {
-    'n', '<leader><enter>c', get_running_repl(true, function(term)
-    term:send_ctrl_c()
-  end), { desc = 'Send Ctrl-c' }
-  },
-  repl_workspace_send_C_d = {
-    'n', '<leader><enter>d', get_running_repl(true, function(term)
-    term:send_ctrl_d()
-  end), { desc = 'Send Ctrl-d' }
-  },
-
-  --- General shell
-  sh_start = { 'n', '<leader>xx', sh_call('start', false), { desc = 'Start' } },
-  sh_hide = { 'n', '<leader>xk', sh_call('hide'), { desc = 'Hide window' } },
-  sh_split_below = { 'n', '<leader>xs', sh_call('split_below'), { desc = 'Split below' } },
-  sh_split_right = { 'n', '<leader>xv', sh_call('split_right'), { desc = 'Split right' } },
-  sh_stop = {
-    'n', '<leader>xq',
-    function()
-      local term = user_config.repl.sh
-      if not term then
-        return
-      end
-
-      if term:is_running() then
-        term:stop()
-        user_config.repl.sh = false
-      end
-    end,
-    { desc = 'Kill' }
-  },
-
   --- File operations
   file_find = { 'n', '<leader>f.', tbuiltin('find_files'), { desc = 'List dir' } },
   file_live_grep = { 'n', '<leader>f?', tbuiltin('live_grep'), { desc = 'Live grep dir' } },
@@ -426,13 +304,17 @@ keymap.define {
 
 --- Buffers
 keymap.define.buffer_select('n', '<leader>bb', tbuiltin('buffers'), { desc = 'Buffers' })
+keymap.define.buffer_select('n', '<leader>br', ':set nomodifiable<CR>', { desc = 'RO' })
+keymap.define.buffer_select('n', '<leader>bR', ':set modifiable<CR>', { desc = 'RW' })
 keymap.define.buffer_wl_copy('n', '<leader>by', ':! cat % <bar> wl-copy<CR>', { desc = 'Copy buffer' })
 keymap.define.buffer_previous('n', '<leader>bp', '<cmd>bprev<CR>', { desc = 'Previous buffer' })
 keymap.define.buffer_next('n', '<leader>bn', '<cmd>bnext<CR>', { desc = 'Next buffer' })
 keymap.define.buffer_hide('n', '<leader>bk', '<cmd>hide<CR>', { desc = 'Hide buffer' })
-keymap.define.buffer_wipeout('n', '<leader>bq', '<cmd>bwipeout! %<CR>', { desc = 'Wipeout buffer' })
-keymap.define.buffer_groups('n', '<leader>bg', function() bg_utils.buffer_picker(vim.fn.bufnr()) end,
-  { desc = 'Show buffer groups for buffer' })
+keymap.define.buffer_groups(
+  'n', '<leader>bg',
+  function() bg_utils.buffer_picker(vim.fn.bufnr()) end,
+  { desc = 'Show buffer groups for buffer' }
+)
 keymap.define.buffer_pop(
   'n', '<leader>bl', function()
     if #recent_buffers < 2 then
@@ -582,12 +464,15 @@ keymap.define.insert_default_template('n', '<leader>it', function()
     return
   end
 
-  local check = vim.fn.stdpath('config') .. '/autoinsert/' .. 'template.' .. ft
-  if not path.is_file(check) then
-    return
+  local check = vim.fn.stdpath('config') .. '/autoinsert/' .. ft .. '.lua'
+  local ok, msg = loadfile(check)
+
+  if not ok then
+    error(msg)
   end
 
+  local s = msg()
   vim.cmd('normal! G')
-  vim.cmd(':r ' .. check)
+  vim.cmd(':r ' .. s)
   vim.cmd('normal! G')
 end, { desc = 'Insert default template for filetype' })

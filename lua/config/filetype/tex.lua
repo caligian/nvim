@@ -143,12 +143,14 @@ local TODO = {
 }
 
 return {
+  name = 'tex',
   lsp = {texlab = {}},
   buffer = {
-    opts = {
+    opt = {
       wrapmargin = 0,
       formatoptions = vim.o.formatoptions .. 't',
       textwidth = 80,
+      shiftwidth = 2,
     }
   },
   keymap = {

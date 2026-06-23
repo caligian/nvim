@@ -99,17 +99,19 @@ return {
       vim.keymap.set({ "n", "x", "o" }, "]m", function()
         require("nvim-treesitter-textobjects.move").goto_next_start("@function.outer", "textobjects")
       end)
+
       vim.keymap.set({ "n", "x", "o" }, "]c", function()
         require("nvim-treesitter-textobjects.move").goto_next_start("@class.outer", "textobjects")
       end)
-      -- You can also pass a list to group multiple queries.
+
       vim.keymap.set({ "n", "x", "o" }, "]o", function()
         require("nvim-treesitter-textobjects.move").goto_next_start({"@loop.inner", "@loop.outer"}, "textobjects")
       end)
-      -- You can also use captures from other query groups like `locals.scm` or `folds.scm`
+
       vim.keymap.set({ "n", "x", "o" }, "]s", function()
         require("nvim-treesitter-textobjects.move").goto_next_start("@local.scope", "locals")
       end)
+
       vim.keymap.set({ "n", "x", "o" }, "]z", function()
         require("nvim-treesitter-textobjects.move").goto_next_start("@fold", "folds")
       end)
@@ -132,29 +134,23 @@ return {
 
       vim.keymap.set({ "n", "x", "o" }, "[M", function()
         require("nvim-treesitter-textobjects.move").goto_previous_end("@function.outer", "textobjects")
-
       end)
+
       vim.keymap.set({ "n", "x", "o" }, "[C", function()
         require("nvim-treesitter-textobjects.move").goto_previous_end("@class.outer", "textobjects")
       end)
+
       vim.keymap.set({ "n", "x", "o" }, "]d", function()
         require("nvim-treesitter-textobjects.move").goto_next("@conditional.outer", "textobjects")
       end)
+
       vim.keymap.set({ "n", "x", "o" }, "[d", function()
         require("nvim-treesitter-textobjects.move").goto_previous("@conditional.outer", "textobjects")
       end)
-      local ts_repeat_move = require "nvim-treesitter-textobjects.repeatable_move"
 
-      -- Repeat movement with ; and ,
-      -- ensure ; goes forward and , goes backward regardless of the last direction
+      local ts_repeat_move = require "nvim-treesitter-textobjects.repeatable_move"
       vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move_next)
       vim.keymap.set({ "n", "x", "o" }, ",", ts_repeat_move.repeat_last_move_previous)
-
-      -- vim way: ; goes to the direction you were moving.
-      -- vim.keymap.set({ "n", "x", "o" }, ";", ts_repeat_move.repeat_last_move)
-      -- vim.keymap.set({ "n", "x", "o" }, ",", ts_repeat_move.repeat_last_move_opposite)
-
-      -- Optionally, make builtin f, F, t, T also repeatable with ; and ,
       vim.keymap.set({ "n", "x", "o" }, "f", ts_repeat_move.builtin_f_expr, { expr = true })
       vim.keymap.set({ "n", "x", "o" }, "F", ts_repeat_move.builtin_F_expr, { expr = true })
       vim.keymap.set({ "n", "x", "o" }, "t", ts_repeat_move.builtin_t_expr, { expr = true })

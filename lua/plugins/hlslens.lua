@@ -1,7 +1,8 @@
 return {
   'kevinhwang91/nvim-hlslens',
-  config = function ()
-    require('hlslens').setup()
+  opts = {},
+  config = function (opts)
+    require('hlslens').setup(opts or {})
 
     local kopts = {noremap = true, silent = true}
     -- local with_desc = function (desc)

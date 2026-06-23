@@ -5,6 +5,7 @@ local data_path = vim.fn.stdpath('data')
 local config_path = vim.fn.stdpath('config')
 local lazy_path = data_path .. '/lazy/lazy.nvim'
 
+
 --- Basic options
 vim.o.expandtab = true
 vim.o.tabstop = 4

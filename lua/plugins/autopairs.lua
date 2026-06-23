@@ -1,8 +1,6 @@
 return {
   'windwp/nvim-autopairs',
-  event = 'InsertEnter',
-  config = function ()
-    require("nvim-autopairs").setup {
+  opts = {
       enabled = function(bufnr) return true end,
       disable_filetype = { "TelescopePrompt", "spectre_panel", "snacks_picker_input" },
       disable_in_macro = false,
@@ -20,6 +18,5 @@ return {
       map_bs = true,
       map_c_h = false,
       map_c_w = false,
-    }
-  end
+  },
 }

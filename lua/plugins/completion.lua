@@ -1,12 +1,11 @@
 return {
+  {"folke/snacks.nvim", opts = {}},
   {
     "saghen/blink.cmp",
-    event = 'InsertEnter',
     version = '1.*',
     -- build = "cargo +nightly-2025-09-30 build --release",
     dependencies = {
       "mikavilpas/blink-ripgrep.nvim",
-      "folke/snacks.nvim",
     },
     opts = {
       keymap = {
@@ -50,7 +49,7 @@ return {
                   project_root_fallback = true,
                   search_casing = "--ignore-case",
                   additional_rg_options = {},
-                  ignore_paths = {},
+                  ignore_paths = { ".git", },
                   additional_paths = {},
                 },
               },

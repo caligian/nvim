@@ -3,7 +3,7 @@ require 'lua-utils.string'
 return {
   repl = { command = 'luajit' },
   buffer = {
-    opts = { shiftwidth = 2, softtabstop = 2, tabstop = 2, expandtab = true }
+    opt = { shiftwidth = 2, softtabstop = 2, tabstop = 2, expandtab = true },
   },
   lsp = {
     lua_ls = {
@@ -17,7 +17,8 @@ return {
               "literal", "partial", "paste", "paste0", "pp", "printf", "readlines", "rpartial", "slurp", "spit",
               "sprintf", "thread", "undefined", "unless", "unless_falsy", "unless_nil", "unless_truthy", "unpack", "when",
               "when_falsy", "when_nil", "when_truthy", "writelines", "system", "systemlist", "user_config", "user_state",
-              "basename", "dirname", "buffer", "autocmd", "keymap", "buffer_group", "nvim", "augroup", "filetype"
+              "basename", "dirname", "buffer", "autocmd", "keymap", "buffer_group", "nvim", "augroup", "filetype",
+              'class', 'metatable',
             },
             disable = {
               'cast-local-type',

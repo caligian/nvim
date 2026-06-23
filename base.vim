@@ -1,25 +1,27 @@
 function! HideWindowIfPossible()
-    if winnr('$') > 1
-        hide
-    else
-        echo "Cannot hide the last window"
-    endif
+  if winnr('$') > 1
+    hide
+  else
+    bprev
+  endif
 endfunction
 
 function! DeleteBufferWindowIfPossible()
-    if winnr('$') > 1
-        bdelete %
-    else
-        echo "Cannot delete the last buffer window"
-    endif
+  if winnr('$') > 1
+    bdelete % 
+    hide
+  else
+    bdelete %
+  endif
 endfunction
 
 function! WipeoutBufferWindowIfPossible()
-    if winnr('$') > 1
-        bwipeout %
-    else
-        echo "Cannot wipeout the last buffer window"
-    endif
+  if winnr('$') > 1
+    bwipeout %
+    hide
+  else
+    bwipeout %
+  endif
 endfunction
 
 set mouse=a
@@ -30,6 +32,8 @@ set sts=4
 set expandtab
 set autoindent
 set number
+set relativenumber
+set autochdir
 set relativenumber
 
 let mapleader = " "
@@ -47,8 +51,8 @@ nnoremap <C-Left> :vertical resize -5 <CR>
 nnoremap <C-Right> :vertical resize +5 <CR>
 
 nnoremap <leader>bk :call HideWindowIfPossible() <CR>
-nnoremap <leader>bq :call DeleteBufferWindowIfPossible() <CR>
-nnoremap <leader>bQ :call WipeoutBufferWindowIfPossible() <CR>
+nnoremap <leader>bQ :bwipeout %<CR>
+nnoremap <leader>bq :call WipeoutBufferWindowIfPossible() <CR>
 nnoremap <leader>bn :bnext<CR>
 nnoremap <leader>bp :bprev<CR>
 
@@ -65,3 +69,5 @@ nnoremap <M-!> :!
 nnoremap <RightMouse> <Nop>
 inoremap <RightMouse> <Nop>
 vnoremap <RightMouse> <Nop>
+
+autocmd TextYankPost * silent! lua vim.hl.on_yank {higroup='Visual', timeout=300}

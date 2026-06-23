@@ -1,10 +1,9 @@
-vim.cmd(":source " .. vim.fn.stdpath('config') .. '/base.vim')
+local config_dir = vim.fn.stdpath('config')
+local base_vim = config_dir .. '/base.vim'
+vim.cmd(string.format(':source %s', base_vim))
 
-require('nvim-utils.state_utils').setup()
+require('nvim-utils.setup')
 
-vim.cmd.color('solarized')
-
-autocmd.set('Colorscheme', function ()
-  vim.cmd.highlight('IndentLine guifg=#48494b')
-  vim.cmd.highlight('IndentLineCurrent guifg=#777b7e')
-end, {pattern = '*'})
+vim.cmd.highlight('IndentLine guifg=#48494b')
+vim.cmd.highlight('IndentLineCurrent guifg=#777b7e')
+vim.cmd.color('material')

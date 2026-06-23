@@ -1,7 +1,12 @@
 return {
   name = 'perl',
-  repl = {
-    command = 'perlconsole'
+  buffer = {
+    opt = {
+      shiftwidth = 2,
+      softtabstop = 2,
+      tabstop = 2,
+      expandtab = true,
+    },
   },
   lsp = {
     perlpls = {},
