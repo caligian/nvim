@@ -3,9 +3,17 @@ return {
   dependencies = {
     'nvim-lua/plenary.nvim',
     'nvim-telescope/telescope-project.nvim',
+    "nvim-telescope/telescope-file-browser.nvim",
   },
   config = function()
-    require("telescope").setup {
+    local dict = require 'lua-utils.dict'
+    local defaults = {}
+
+    dict.merge(defaults, user_config.telescope.theme)
+    dict.merge(defaults, user_config.telescope.opts)
+
+    local opts = {
+      defaults = defaults,
       pickers = {
         buffers = {
           show_all_buffers = true,
@@ -23,19 +31,9 @@ return {
         }
       }
     }
+    -- require('nvim-utils.telescope').setup()
+    require("telescope").setup(opts)
+    require('telescope').load_extension('project')
+    require("telescope").load_extension("file_browser")
   end,
-  {
-    'nvim-telescope/telescope-project.nvim',
-    dependencies = { 'nvim-telescope/telescope.nvim' },
-    config = function ()
-      require('telescope').load_extension('project')
-    end
-  },
-  {
-    "nvim-telescope/telescope-file-browser.nvim",
-    dependencies = { 'nvim-telescope/telescope.nvim', "nvim-lua/plenary.nvim" },
-    config = function ()
-      require("telescope").load_extension("file_browser")
-    end
-  }
 }

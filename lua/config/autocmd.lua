@@ -20,6 +20,13 @@ return {
     end
   end, { pattern = "*.*" }
   },
+  delete_unnamed_buffers = {
+    'VimLeave', function(args)
+    if not args.file or args.file == '' then
+      buffer.rm(args.buf, { force = true })
+    end
+  end, { pattern = '*' }
+  },
   delete_help_buffer = {
     'FileType', function(args)
     keymap.set('n', 'q', ':call HideWindowIfPossible()<CR>', {
@@ -30,7 +37,7 @@ return {
   },
   hide_help_buffer = {
     'FileType', function(args)
-    keymap.set('n', 'Q', ':call WipeoutBufferWindowIfPossible()<CR>', {
+    keymap.set('n', 'Q', ':call DeleteBufferWindowIfPossible()<CR>', {
       desc = 'Hide window',
       buffer = args.buf,
     })
@@ -53,8 +60,13 @@ return {
   },
   indent_highlight = {
     'Colorscheme', function()
-    vim.cmd.highlight('IndentLine guifg=#48494b')
-    vim.cmd.highlight('IndentLineCurrent guifg=#777b7e')
+    if vim.o.background == 'dark' then
+      vim.cmd.highlight('IndentLine guifg=#48494b')
+      vim.cmd.highlight('IndentLineCurrent guifg=#777b7e')
+    else
+      vim.cmd.highlight('IndentLine guifg=#d3d3d3')
+      vim.cmd.highlight('IndentLineCurrent guifg=#b2beb5')
+    end
   end, { pattern = '*' }
   },
 }

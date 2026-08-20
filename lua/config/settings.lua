@@ -9,27 +9,32 @@ local validate = require 'lua-utils.validate'
 ---@field current_config table
 ---@field previous_config table
 local settings = bless {
-    name = 'settings',
-    o = {
-        tabstop = 4,
-        shiftwidth = 4,
-        softtabstop = 4,
-        expandtab = true,
-        autoindent = true,
-        autochdir = true,
-        background = 'dark',
-        cursorline = true,
-        wildmenu = true,
-        wildmode = 'longest:full,full',
-        number = true,
-        relativenumber = true,
-    },
-    g = {
-        netrw_keepdir = 0,
-    },
-    current_config = {},
-    previous_config = {},
-    filetype = {},
+  name = 'settings',
+  o = {
+    tabstop = 4,
+    shiftwidth = 4,
+    softtabstop = 4,
+    expandtab = true,
+    autoindent = true,
+    autochdir = true,
+    background = 'dark',
+    cursorline = true,
+    wildmenu = true,
+    wildmode = 'longest:full,full',
+    number = true,
+    relativenumber = true,
+    termguicolors = true,
+    clipboard = 'unnamedplus',
+  },
+  g = {
+    netrw_keepdir = 0,
+    background_sync = false,
+    matchparen_disable_insert = 1,
+    loaded_matchparen = 0,
+  },
+  current_config = {},
+  previous_config = {},
+  filetype = {},
 }
 
 ---@class UserOverrides
@@ -39,39 +44,45 @@ local settings = bless {
 ---@param overrides? UserOverrides
 ---@return table
 function settings:config(overrides)
-    overrides = overrides or {}
-    validate {
-        opt_o = { 'table', overrides.o },
-        opt_g = { 'table', overrides.g }
-    }
+  overrides = overrides or {}
+  validate {
+    opt_o = { 'table', overrides.o },
+    opt_g = { 'table', overrides.g }
+  }
 
-    local g = copy.deep(self.g)
-    local o = copy.deep(self.o)
-    local global_config = { g = g, o = o }
+  local g = copy.deep(self.g)
+  local o = copy.deep(self.o)
+  local global_config = { g = g, o = o }
 
-    self.previous_config = copy.deep(self.current_config)
-    self.current_config = copy.deep(overrides)
+  self.previous_config = copy.deep(self.current_config)
+  self.current_config = copy.deep(overrides)
 
-    return dict.merge(global_config, overrides, true)
+  return dict.merge(global_config, overrides, true)
 end
 
 function settings:setup(overrides)
-    overrides = self:config(overrides)
+  overrides = self:config(overrides)
 
-    local function set_values(varname, tbl)
-        for key, value in pairs(tbl) do
-            vim[varname][key] = value
-        end
+  local function set_values(varname, tbl)
+    for key, value in pairs(tbl) do
+      vim[varname][key] = value
     end
+  end
 
-    set_values('o', overrides.o)
-    set_values('g', overrides.g)
+  set_values('o', overrides.o)
+  set_values('g', overrides.g)
 
-    self.previous_config = copy.deep(self.current_config)
-    self.current_config = copy.deep(overrides)
+  self.previous_config = copy.deep(self.current_config)
+  self.current_config = copy.deep(overrides)
 
-    return overrides
+  return overrides
 end
 
-user_config.utils.settings = settings
+vim.g.loaded_netrw = 0
+vim.g.loaded_netrwPlugin = 0
+
+user_config.settings = settings
+user_config.g = settings.g
+user_config.o = settings.o
+
 return settings

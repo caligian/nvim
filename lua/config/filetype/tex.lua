@@ -1,150 +1,254 @@
-local nvim = require 'nvim-utils.nvim'
+local list = require 'lua-utils.list'
+-- local nvim = require 'nvim-utils.nvim'
 local buffer = require 'nvim-utils.buffer'
-local latex = { line = {}, buffer = {}, jump = {}, select = {} }
-lline = latex.line
-lbuffer = latex.buffer
-ljump = latex.jump
-lselect = latex.select
+local path = require 'lua-utils.path_utils'
+local nvim = require 'nvim-utils.nvim'
+local tex = bless {}
 
-local function insert_env(env_name)
-  local function put_lines(name)
-    pcall(function()
-      vim.cmd(sprintf('normal! o'))
-      local linenum = buffer.get_linenum(vim.fn.bufnr())
-      vim.api.nvim_buf_set_lines(0, linenum, linenum, false, {
-        sprintf("\\begin{%s}", name),
-        sprintf("\\end{%s}", name)
-      })
-      vim.cmd(sprintf('?\\\\begin'))
-      vim.cmd('normal! vj=')
-      vim.cmd(sprintf('normal! %dG', linenum + 3))
-      vim.cmd('normal! dd')
-      vim.cmd('normal! kk')
-    end)
-  end
+function tex.change_extension(s, from, to)
+  return (string.gsub(s, '%.' .. from .. '$', '.' .. to))
+end
 
-  if not env_name then
-    vim.ui.input({
-      prompt = 'Environment name % ',
-      default = '',
-    }, function(s)
-      if s and #s > 0 then
-        put_lines(string.trim(s))
-      end
-    end)
+function tex.run(cmd, ...)
+  return nvim.cmd(":! " .. sprintf(cmd, ...))
+end
+
+function tex.in_project(file)
+  return path.is_dir(dirname(file) .. '/.git')
+end
+
+function tex.if_in_project(file, when, unless)
+  if tex.in_project(file) then
+    return when(file)
   else
-    put_lines(env_name)
+    return unless(file)
   end
 end
 
-local put_item = function()
-  vim.cmd("normal! o")
-  vim.api.nvim_put({ "\\item  " }, "c", true, true)
-  vim.cmd("normal! ==")
-  vim.cmd("normal! $")
+function tex.git_stage()
+  vim.cmd('Git stage %')
 end
 
-local insert_enum = function()
-  insert_env('enumerate')
+function tex.git_commit()
+  vim.cmd(':Git commit')
 end
 
-local insert_items = function()
-  insert_env('itemize')
+---@param bufname string
+---@return string
+function tex.get_bib_file(bufname)
+  return (bufname:gsub('%.tex$', '.bib'))
 end
 
-local next_main_section = function()
-  buffer.find_below_and_goto(buffer.get_current_id(), true, "\\section%*?")
+---@param bufname string
+function tex.clear(bufname)
+  local exclude = {
+    [bufname] = true,
+    [tex.get_bib_file(bufname)] = true
+  }
+
+  for _, file in ipairs(path.ls(dirname(bufname))) do
+    if not exclude[file] then
+      tex.run('rm %s', file)
+    end
+  end
 end
 
-local prev_main_section = function()
-  buffer.find_above_and_goto(buffer.get_current_id(), true, "\\section%*?")
+---@param file string
+---@param ext string
+---@return string?
+function tex.has_file(file, ext)
+  file = tex.change_extension(file, 'tex', ext)
+  ---@type string
+  return (path.is_file(file) and file)
 end
 
-local next_section = function()
-  buffer.find_below_and_goto(buffer.get_current_id(), true, "\\[a-z]*section%*?")
+---@param file string
+---@param dir string
+---@return string?
+function tex.has_dir(file, dir)
+  d = dirname(file)
+  local check = d .. '/' .. dir
+  ---@type string
+  return (path.is_dir(check) and check)
 end
 
-local prev_section = function()
-  buffer.find_above_and_goto(buffer.get_current_id(), true, "\\[a-z]*section%*?")
+function tex.ls_files(bufname, exclude_this)
+  local basename = path.basename(bufname)
+  local file = string.split(basename, '%.')
+  local name = file[1]
+  local files = list.filter(
+    path.glob(name .. '.' .. '*'),
+    function(check)
+      if exclude_this and basename == path.basename(check) then
+        return false
+      else
+        return path.is_file(check)
+      end
+    end,
+    false
+  )
+
+  if #files == 0 then
+    print("No files found")
+  else
+    return list.sort(files)
+  end
 end
 
-local next_env = function()
-  pcall(function() vim.cmd '/\\\\begin' end)
+function tex.clear_dir(bufname)
+  for _, delete in ipairs(tex.ls_files(bufname, true) or {}) do
+    tex.run('rm ' .. delete)
+  end
 end
 
-local prev_env = function()
-  pcall(function() vim.cmd '?\\\\begin' end)
+function tex.ls(bufname)
+  for _, file in ipairs(tex.ls_files(bufname)) do
+    print(file)
+  end
 end
 
-local next_item = function()
-  pcall(function() vim.cmd '/\\\\item' end)
+---@param bufname string
+function tex.compile_bib(bufname)
+  local auxfile = tex.change_extension(bufname, 'tex', 'aux')
+  local name = basename(bufname:gsub("%.tex$", ""))
+
+  if not is_file(auxfile) then
+    tex.run('pdflatex %s', bufname)
+    if not is_file(auxfile) then return end
+  end
+
+  tex.run('bibtex %s', name)
+  tex.run('pdflatex %s', bufname)
 end
 
-local prev_item = function()
-  pcall(function() vim.cmd '?\\\\item' end)
+---Open a tex PDF using xdg-open
+---@param bufname string
+function tex.open(bufname)
+  local app = user_config.app and user_config.app.pdf or 'xdg-open'
+  local pdf = tex.change_extension(bufname, 'tex', 'pdf')
+
+  if path.is_file(pdf) then
+    tex.run(app .. ' ' .. pdf)
+  end
 end
 
-local mark_env = function()
-  local buf = buffer.get_current_id()
-  local line = buffer.current_line(buf)
-  local ind = string.find(line, '\\[a-zA-Z0-9_*]+%{')
-  local normal = nvim.normal
+---@param bufname string
+---@return string?
+function tex.compile_pdf(bufname)
+  local pdf = tex.change_extension(bufname, 'tex', 'pdf')
+  tex.run('pdflatex %s', bufname)
+  tex.compile_bib(bufname)
 
-  if ind == nil then
+  if not is_file(pdf) then
+    return
+  else
+    return pdf
+  end
+end
+
+function tex.wrap(name, ...)
+  local args = { ... }
+  return function()
+    local bufnr = vim.fn.bufnr()
+    local bufname = buffer.get_name(bufnr)
+    table.insert(args, 1, bufname)
+    return tex[name](unpack(args))
+  end
+end
+
+function tex.normal(cmd, ...)
+  nvim.normal(sprintf(cmd, ...))
+end
+
+function tex.search_below(pattern)
+  vim.cmd('/' .. pattern)
+  vim.cmd(':noh')
+end
+
+function tex.search_above(pattern)
+  vim.cmd('/' .. pattern)
+  vim.cmd(':noh')
+end
+
+function tex.search(pattern, direction, buf)
+  buf = buf or buffer.current()
+  local linenums = {}
+  local _, current_linenum = buffer.get_current_linenum(buf)
+
+  if direction:match 'below' then
+    local _, lc = buffer.get_line_count(buf)
+    linenums = list.seq(current_linenum + 1, lc - 1)
+  else
+    linenums = list.seq(current_linenum - 1, 0, -1)
+  end
+
+  for _, linenum in ipairs(linenums) do
+    local _, line = buffer.get_line(buf, linenum)
+    if line and string.match(line, pattern) then
+      vim.cmd(sprintf(':normal! %dG', linenum + 1))
+      break
+    end
+  end
+end
+
+function tex.search_wrap(pattern, direction, buf)
+  return function()
+    local use = buf or buffer.current()
+    tex.search(pattern, direction, use)
+  end
+end
+
+function tex.cmd_mark_env()
+  local ok, line = buffer.get_current_line(buffer.current())
+  if not ok or not line then
+    return
+  elseif not string.match(line, '\\begin') then
     return
   end
 
-  normal("0", sprintf("%dl", ind), "f{v%o")
+  local ind = string.find(line, '\\begin')
+  nvim.normal(sprintf("%d|", ind), "vae")
 end
 
-local make_bib = function()
-  nvim.command()
+function tex.cmd_mark_cmd()
+  local ok, line = buffer.get_current_line(buffer.current())
+  if not ok or not line then
+    return
+  elseif not string.match(line, '\\[a-zA-Z0-9]') then
+    return
+  end
+
+  local ind = string.find(line, '\\[a-zA-Z0-9]')
+  nvim.normal(sprintf("%d|", ind), "vac")
 end
 
-local topdf = function()
-  vim.cmd [[ ! pdflatex % ]]
+function tex.cmd_clear()
+  tex.clear_dir(buffer.get_name(buffer.current()))
 end
 
-local tex2pdf = function(bufname)
-  bufname = bufname:gsub("[.]tex$", ".pdf")
-  return bufname
-end
+tex.cmd_goto_next_main_section = tex.search_wrap('\\section[*]?[{]', 'below')
+tex.cmd_goto_prev_main_section = tex.search_wrap('\\section[*]?[{]', 'above')
+tex.cmd_goto_next_section = tex.search_wrap('\\[sub]*section[*]?[{]', 'below')
+tex.cmd_goto_prev_section = tex.search_wrap('\\[sub]*section[*]?[{]', 'above')
+tex.cmd_goto_next_env = tex.search_wrap('\\begin%{', 'below')
+tex.cmd_goto_prev_env = tex.search_wrap('\\begin%{', 'above')
+tex.cmd_goto_next_item = tex.search_wrap('\\item', 'below')
+tex.cmd_goto_prev_item = tex.search_wrap('\\item', 'above')
+tex.cmd_compile_pdf = tex.wrap 'compile_pdf'
+tex.cmd_compile_bib = tex.wrap 'compile_bib'
+tex.cmd_open = tex.wrap 'open'
 
--- TODO
-local clear_temp_files = function()
-end
-
-local topdf_and_open = function()
-  local bufname = buffer.get_name(buffer.get_current_id())
-  local cmd = '! pdflatex ' .. bufname .. ' && papers ' .. tex2pdf(bufname)
-  vim.cmd(cmd)
-end
-
-local open = function()
-  local bufname = buffer.get_name(buffer.get_current_id())
-  vim.cmd(sprintf([[ ! papers %s ]], tex2pdf(bufname)))
-end
-
-function lline.is_section(linenum)
-  local line = buffer.get_current_line(buffer.get_current_id())
-  return string.match(line, [=[^%s*\[a-z]section[*]?]=]) ~= nil
-end
-
-function lselect.section(linenum)
-  local line = nil
-end
-
-local function select_final_arg()
-
-end
-
-local TODO = {
-  'lselect', 'lline'
+--[[
+\begin[]{}{
+some content
 }
+\end
+
+--]]
 
 return {
   name = 'tex',
-  lsp = {texlab = {}},
+  lsp = { texlab = {} },
   buffer = {
     opt = {
       wrapmargin = 0,
@@ -154,23 +258,23 @@ return {
     }
   },
   keymap = {
-    insert_env = { 'n', '<space>ie', insert_env, { desc = 'Insert env' } },
-    insert_enum = { 'n', '<space>il', insert_enum, { desc = 'Insert list env' } },
-    insert_items = { 'n', '<space>ii', insert_items, { desc = 'Insert items env' } },
-    insert_item = { { 'i', 'n' }, '<M-j>', put_item, { desc = 'Insert item on next line' } },
-    mark_env = { 'n', '<space>%', mark_env, { desc = 'Visually mark environment' } },
+    disable_lsp_format = { 'n', '<space>lf', ':echo "Cannot use lsp formatter on latex files."<CR>', { desc = 'Disable LSP formatter' } },
     toggle_toc = { 'n', '<C-t>', '<plug>(vimtex-toc-toggle)', { desc = 'Toggle table of contents' } },
     open_toc = { 'n', '<C-z>', '<plug>(vimtex-toc-open)', { desc = 'Open table of contents' } },
-    next_main_section = { { 'i', 'v', 'n' }, "<C-M-e>", next_main_section, { desc = 'Goto next \\section' } },
-    prev_main_section = { { 'i', 'v', 'n' }, '<C-M-a>', prev_main_section, { desc = 'Goto prev \\section' } },
-    next_section = { { 'i', 'v', 'n' }, "<C-M-n>", next_section, { desc = 'Goto next \\*section' } },
-    prev_section = { { 'i', 'v', 'n' }, '<C-M-p>', prev_section, { desc = 'Goto prev \\*section' } },
-    next_env = { { 'i', 'v', 'n' }, "<M-n>", next_env, { desc = 'Goto next env' } },
-    prev_env = { { 'i', 'v', 'n' }, '<M-p>', prev_env, { desc = 'Goto prev env' } },
-    next_item = { { 'i', 'v', 'n' }, "<M-f>", next_item, { desc = 'Goto next item' } },
-    prev_item = { { 'i', 'v', 'n' }, '<M-b>', prev_item, { desc = 'Goto prev item' } },
-    topdf = { 'n', '<space>cp', topdf, { desc = 'To PDF' } },
-    topdf_and_open = { 'n', '<space>cP', topdf_and_open, { desc = 'To PDF and preview (blocking)' } },
-    preview = { 'n', "<space>co", open, { desc = 'Preview file (blocking)' } },
+    mark_cmd = { { 'v', 'n' }, "<C-h>", tex.cmd_mark_cmd, { desc = 'Visually mark nearest command' } },
+    mark_env = { { 'v', 'n' }, "<C-.>", tex.cmd_mark_env, { desc = 'Visually mark nearest env' } },
+    -- mark_cmd_or_env = { { 'v', 'n' }, "<C-M-h>", tex.cmd_mark_cmd_or_env, { desc = 'Visually mark nearest env/command' } },
+    next_main_section = { { 'i', 'v', 'n' }, "<C-M-e>", tex.cmd_goto_next_main_section, { desc = 'Goto next \\section' } },
+    prev_main_section = { { 'i', 'v', 'n' }, '<C-M-a>', tex.cmd_goto_prev_main_section, { desc = 'Goto prev \\section' } },
+    next_section = { { 'i', 'v', 'n' }, "<C-M-n>", tex.cmd_goto_next_section, { desc = 'Goto next \\(sub)*section' } },
+    prev_section = { { 'i', 'v', 'n' }, '<C-M-p>', tex.cmd_goto_prev_section, { desc = 'Goto prev \\(sub)*section' } },
+    next_env = { { 'i', 'v', 'n' }, "<M-n>", tex.cmd_goto_next_env, { desc = 'Goto next env' } },
+    prev_env = { { 'i', 'v', 'n' }, '<M-p>', tex.cmd_goto_prev_env, { desc = 'Goto prev env' } },
+    next_item = { { 'i', 'v', 'n' }, "<M-f>", tex.cmd_goto_next_item, { desc = 'Goto next item' } },
+    prev_item = { { 'i', 'v', 'n' }, '<M-b>', tex.cmd_goto_prev_item, { desc = 'Goto prev item' } },
+    compile_bibliography = { 'n', '<leader>cb', tex.cmd_compile_bib, { desc = 'Compile bibliography' } },
+    compile_pdf = { 'n', '<leader>cp', tex.cmd_compile_pdf, { desc = 'Create PDF' } },
+    open = { 'n', '<leader>co', tex.cmd_open, { desc = "Open PDF" } },
+    clear = { 'n', '<leader>cr', tex.cmd_clear, { desc = 'Clear everything except .bib and .tex' } }
   }
 }

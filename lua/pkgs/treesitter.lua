@@ -39,6 +39,7 @@ return {
         desc = "Select context-aware indent (inner, entire range) in line-wise visual mode",
       },
     },
+    lazy = false,
   },
   {
     'RRethy/nvim-treesitter-textsubjects',
@@ -60,12 +61,12 @@ return {
     build = ":TSUpdate",
     config = function()
       require('nvim-treesitter.configs').setup {
-        sync_install = true,
-        auto_install = true,
-        ignore_install = { 'tex', 'nix', 'bash', 'r', 'lua', 'python', 'erlang', 'elixir' },
+        sync_install = false,
+        auto_install = false,
+        ignore_install = { 'tex', 'nix', 'bash', 'r', 'lua', 'python', 'erlang', 'elixir', 'perl' },
         highlight = {
           enable = true,
-          disable = {'lua'}
+          disable = {}
         },
         indent = {
           enable = true,

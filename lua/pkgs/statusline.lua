@@ -6,7 +6,7 @@ return {
     opts = {
       options = {
         icons_enabled = true,
-        theme = 'tomorrow_night',
+        -- theme = 'tomorrow_night',
         -- component_separators = { left = '', right = ''},
         -- section_separators = { left = '', right = ''},
         component_separators = { left = '', right = ''},

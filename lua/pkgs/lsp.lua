@@ -1,8 +1,64 @@
 return {
   {
+    "hedyhli/outline.nvim",
+    lazy = false,
+    config = function()
+      require("outline").setup {
+        symbols = {
+          icon_fetcher = function(kind, _, _)
+            return string.format('[%s]', kind)
+          end,
+        }
+      }
+      vim.keymap.set(
+        "n",
+        "<C-t>",
+        "<cmd>Outline<CR>",
+        { desc = "Toggle Outline" }
+      )
+    end,
+  },
+  {
     'mason-org/mason.nvim',
     opts = {}
   },
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "MunifTanjim/nui.nvim",
+      "nvim-tree/nvim-web-devicons",
+    },
+    lazy = false,
+    config = function()
+      require('neo-tree').setup({
+        sources = {
+          "filesystem",
+          "buffers",
+          "git_status",
+          "document_symbols",
+        },
+        document_symbols = {
+          follow_cursor = true,
+          auto_close = false,
+        }
+      })
+
+      vim.keymap.set('n', '<C-t>', ':Neotree document_symbols<CR>', { desc = 'Neotree doc symbols' })
+      vim.keymap.set('n', '<C-p>', ':Neotree<CR>', { desc = 'Neotree' })
+    end,
+  },
+  {
+    "Crysthamus/nvim-file-operations",
+    dependencies = {
+      "nvim-neo-tree/neo-tree.nvim",
+    },
+    config = function()
+      require("nvim-file-operations").setup()
+    end,
+  },
+
   -- {
   --   'stevearc/aerial.nvim',
   --   config = function()
@@ -24,7 +80,7 @@ return {
       local fts = dict.keys(user_config.filetype)
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
-      list.each(fts, function (ft)
+      list.each(fts, function(ft)
         local self = user_config.filetype[ft]
         if not self.lsp then
           return
@@ -53,8 +109,6 @@ return {
       },
     },
   },
-
-  --- Need to be setup
   {
     "folke/trouble.nvim",
     opts = {},
